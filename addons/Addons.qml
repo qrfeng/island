@@ -106,10 +106,40 @@ Item {
         siriWave(0.24, 0.76, 0, "#ffffff", 0.55, 0.045),
         siriWave(0.34, 0.66, 0, "#ffffff", 0.95, 0.03)
       ],
-      description: "Answers launcher questions in the island",
+      description: "Answers launcher questions in the island, through Pi",
       options: [
-        { key: "with", label: "Ask With", detail: "Uses the command-line tool you're signed in to", type: "popup", default: "codex",
-          choices: [{ label: "Claude", value: "claude" }, { label: "Codex", value: "codex" }] }
+        { key: "web", label: "Search the web", detail: "Answers can look things up online: slower, and only searching and reading pages", type: "switch", default: true }
+      ] },
+    { id: "agents", name: "Agent usage", icon: "\uf201", color: "#30d158", default: true,
+      source: "agents/AgentsAddon.qml",
+      description: "Tokens the coding agents have spent",
+      options: [
+        { key: "refresh", label: "Refresh", detail: "How often to read the figures again while the view is open",
+          type: "popup", default: "15 minutes", choices: ["5 minutes", "15 minutes", "30 minutes", "1 hour"] },
+        { key: "rate", label: "Dollar to yuan", detail: "Rates the endpoints' dollar figures into yuan",
+          type: "text", default: "6.69", placeholder: "e.g. 6.69" },
+        { key: "others", label: "Show Claude, Codex, and Fireworks", detail: "Also list those tools and ask them for their rate limits over the network",
+          type: "switch", default: false }
+      ] },
+    { id: "todos", name: "Task list", icon: "󰝖", color: "#34c759", default: true,
+      source: "todos/TodosAddon.qml",
+      // Apple Reminders' tile: a dark card, one green tick, and the list under
+      // it fading away as it goes down.
+      iconLayers: [
+        { rect: true, color: "#1c1c1e", x: 0.5, y: 0.5, width: 0.94, height: 0.94, radius: 0.26 },
+        { glyph: "󰄬", color: "#34c759", x: 0.26, y: 0.3, size: 0.34 },
+        { rect: true, color: "#ffffff", opacity: 0.9, x: 0.66, y: 0.3, width: 0.5, height: 0.075, radius: 0.5 },
+        { glyph: "󰄰", color: "#8e8e93", x: 0.26, y: 0.52, size: 0.26 },
+        { rect: true, color: "#ffffff", opacity: 0.55, x: 0.66, y: 0.52, width: 0.5, height: 0.075, radius: 0.5 },
+        { glyph: "󰄰", color: "#8e8e93", x: 0.26, y: 0.73, size: 0.26 },
+        { rect: true, color: "#ffffff", opacity: 0.3, x: 0.66, y: 0.73, width: 0.4, height: 0.075, radius: 0.5 }
+      ],
+      description: "A todo.txt file, checked off on the island",
+      options: [
+        { key: "path", label: "File", detail: "Plain todo.txt, editable anywhere",
+          type: "text", default: "~/.local/share/todos/todo.txt", placeholder: "~/.local/share/todos/todo.txt" },
+        { key: "done", label: "Finished tasks", detail: "How far back to keep listing them",
+          type: "popup", default: "Last 7 days", choices: ["Hide", "Last 3 days", "Last 7 days", "Last 30 days", "Always"] }
       ] }
   ]
 
@@ -174,7 +204,6 @@ Item {
     var old = settings.askAi
     if (!old) return
     if ((settings.addons || {}).ask === undefined) setEnabled("ask", old !== "none")
-    if (old === "claude" && ((settings.addonOptions || {}).ask || {}).with === undefined) setOption("ask", "with", "claude")
     settings.askAi = ""
   }
 
