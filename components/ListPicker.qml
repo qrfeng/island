@@ -37,6 +37,10 @@ Item {
   // Spotlight-style selection: the selected row fills with the theme accent
   // (rows should switch their text to host.theme.accentText when selected).
   property bool fillSelection: false
+  // How dim a `disabled:` row looks. The default suits a menu entry you cannot
+  // pick right now; a view that lists a whole read-only layer (the keybinding
+  // list's terminal layers) raises it so those rows stay readable.
+  property real disabledOpacity: 0.4
   readonly property string query: search.text
   readonly property var selected: items[list.currentIndex] || null
   signal chosen(var entry)
@@ -158,7 +162,7 @@ Item {
       readonly property bool itemDisabled: picker.isDisabled(slot.modelData)
       width: list.cellWidth
       height: list.cellHeight
-      opacity: slot.itemDisabled ? 0.4 : 1
+      opacity: slot.itemDisabled ? picker.disabledOpacity : 1
 
       Rectangle {
         anchors.fill: parent
