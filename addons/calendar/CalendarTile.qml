@@ -16,19 +16,17 @@ CcTile {
   readonly property bool ongoing: !!next && next.start <= now
   readonly property int minutesLeft: next ? Math.max(1, Math.round((next.start - now) / 60000)) : 0
   readonly property bool soon: !!next && (ongoing || next.start - now <= calendar.reminderMs)
-  readonly property var weekdays: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+  readonly property var weekdays: ["周日", "周一", "周二", "周三", "周四", "周五", "周六"]
   readonly property string weekday: weekdays[calendar.today.getDay()]
-  readonly property var months: ["January", "February", "March", "April", "May", "June", "July",
-    "August", "September", "October", "November", "December"]
-  // "October 2"
-  readonly property string dateText: months[calendar.today.getMonth()] + " " + calendar.today.getDate()
+  // "10月2日"
+  readonly property string dateText: Qt.formatDate(calendar.today, "M月d日")
 
   anchors.fill: parent
   checked: soon
   title: next ? next.title : dateText
-  subtitle: !next ? (calendar.urls.length === 0 ? "No calendar added" : "No more events today")
-    : ongoing ? "Now · until " + calendar.timeText(next.end)
-    : minutesLeft <= 60 ? "In " + minutesLeft + " min · " + calendar.timeText(next.start)
+  subtitle: !next ? (calendar.urls.length === 0 ? "未添加日历" : "暂无日程")
+    : ongoing ? "进行中 · 至 " + calendar.timeText(next.end)
+    : minutesLeft <= 60 ? minutesLeft + "分钟后 · " + calendar.timeText(next.start)
     : calendar.spanText(next)
   onClicked: calendar.host.view = "calendar"
 
@@ -42,12 +40,12 @@ CcTile {
     spacing: -5
     Text {
       anchors.horizontalCenter: parent.horizontalCenter
-      text: tile.weekday.slice(0, 3).toUpperCase()
+      text: tile.weekday
       color: tile.checked ? tile.center.badgeOnInk : tile.center.accent
       font.family: tile.center.host.theme.textFontFamily
-      font.pixelSize: tile.center.host.theme.px(9)
+      font.pixelSize: tile.center.host.theme.px(8)
       font.weight: Font.Bold
-      font.letterSpacing: 0.3
+      font.letterSpacing: 0.2
     }
     Text {
       anchors.horizontalCenter: parent.horizontalCenter

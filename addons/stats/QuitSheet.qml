@@ -82,7 +82,7 @@ Item {
         Layout.fillWidth: true
         horizontalAlignment: Text.AlignHCenter
         wrapMode: Text.WordWrap
-        text: "Are you sure you want to quit “" + (sheet.row ? sheet.row.name : "") + "”?"
+        text: "确定要退出“" + (sheet.row ? sheet.row.name : "") + "”吗？"
         color: sheet.view.text
         font.family: "Adwaita Sans"
         font.pixelSize: sheet.view.detailFontSize
@@ -93,8 +93,8 @@ Item {
         horizontalAlignment: Text.AlignHCenter
         wrapMode: Text.WordWrap
         text: sheet.row && sheet.row.children > 0
-          ? "Its " + (sheet.row.children + 1) + " processes will be asked to end. Force Quit ends them at once, losing unsaved work."
-          : "Force Quit ends it at once, losing unsaved work."
+          ? "将退出其" + (sheet.row.children + 1) + "个进程；强制退出会立即结束，未保存内容将丢失"
+          : "强制退出会立即结束进程，未保存内容将丢失"
         color: sheet.view.textMuted
         font.family: "Adwaita Sans"
         font.pixelSize: sheet.view.detailCaptionFontSize
@@ -103,9 +103,9 @@ Item {
         Layout.fillWidth: true
         Layout.topMargin: 6
         spacing: 8
-        SettingsButton { view: sheet.view; label: "Cancel"; Layout.fillWidth: true; onClicked: sheet.close() }
-        SettingsButton { view: sheet.view; label: "Force Quit"; Layout.fillWidth: true; onClicked: sheet.finish(true) }
-        SettingsButton { view: sheet.view; label: "Quit"; primary: true; Layout.fillWidth: true; onClicked: sheet.finish(false) }
+        SettingsButton { view: sheet.view; label: "取消"; Layout.fillWidth: true; onClicked: sheet.close() }
+        SettingsButton { view: sheet.view; label: "强制退出"; Layout.fillWidth: true; onClicked: sheet.finish(true) }
+        SettingsButton { view: sheet.view; label: "退出"; primary: true; Layout.fillWidth: true; onClicked: sheet.finish(false) }
       }
     }
   }

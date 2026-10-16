@@ -10,10 +10,12 @@ CcSection {
   readonly property var controls: center.controls
   readonly property bool galleryPreview: parent.galleryPreview
   anchors.fill: parent
-  title: "Sound"
-  detail: !card.controls.controlPresent("sound") ? "Unavailable" : card.controls.muted ? "Muted" : Math.round(card.controls.volume * 100) + "%"
+  title: "声音"
+  detail: !card.controls.controlPresent("sound") ? "不可用" : card.controls.muted ? "已静音" : Math.round(card.controls.volume * 100) + "%"
   showChevron: !galleryPreview && !card.center.editMode && card.controls.outputs.length > 1
   chevronOpen: card.center.outputsOpen
+  chevronLabel: "声音输出"
+  chevronHideLabel: "隐藏输出"
   onChevronClicked: { card.center.outputsOpen = !card.center.outputsOpen; card.center.inputsOpen = false }
 
   CcSlider {
@@ -72,7 +74,7 @@ CcSection {
   }
   Text {
     visible: !galleryPreview && !card.controls.controlPresent("sound")
-    text: "No audio output available"
+    text: "无可用音频输出"
     color: card.center.textMuted
     font.family: card.center.host.theme.textFontFamily
     font.pixelSize: card.center.host.theme.px(12)

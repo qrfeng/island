@@ -36,7 +36,7 @@ Item {
   // 17 → "17", or "5PM" without the 24-hour clock, as Apple writes them.
   function hourText(hour) {
     if (host.settings.clock24h) return (hour < 10 ? "0" : "") + hour
-    return ((hour + 11) % 12 + 1) + (hour < 12 ? "AM" : "PM")
+    return (hour < 12 ? "上午" : "下午") + ((hour + 11) % 12 + 1)
   }
   // A chance of rain under this (%) isn't shown.
   readonly property int rainShown: 20
@@ -128,7 +128,7 @@ Item {
           spacing: 4
           Text {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: modelData.now ? "Now" : view.hourText(modelData.hour)
+            text: modelData.now ? "现在" : view.hourText(modelData.hour)
             color: view.inkMuted
             font.family: view.theme.textFontFamily
             font.pixelSize: view.theme.px(13)
@@ -192,10 +192,10 @@ Item {
       Layout.fillWidth: true
       horizontalAlignment: Text.AlignHCenter
       wrapMode: Text.WordWrap
-      text: notice.status === "loading" ? "Loading weather…"
-        : notice.status === "missing" ? "Set a city in Settings → Addons"
-        : notice.status === "unknown" ? "Couldn't find “" + view.weather.city + "”"
-        : "Couldn't reach Open-Meteo"
+      text: notice.status === "loading" ? "正在加载天气…"
+        : notice.status === "missing" ? "在设置 → 小组件中填写城市"
+        : notice.status === "unknown" ? "找不到“" + view.weather.city + "”"
+        : "无法连接 Open-Meteo"
       color: notice.status === "loading" ? view.textMuted : view.theme.text
       font.family: view.theme.textFontFamily
       font.pixelSize: view.theme.px(15)
@@ -213,7 +213,7 @@ Item {
       Text {
         id: buttonText
         anchors.centerIn: parent
-        text: notice.needsCity ? "Open Settings" : "Try Again"
+        text: notice.needsCity ? "打开设置" : "重试"
         color: view.theme.accentText
         font.family: view.theme.textFontFamily
         font.pixelSize: view.theme.px(14)

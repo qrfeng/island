@@ -180,6 +180,31 @@ Item {
     feedbackTimer.restart()
   }
 
+  // Run `action` with the keyboard back on the app the user came from. While a
+  // view is open the island's own surface holds keyboard focus, so anything
+  // that must land on that app — a paste, fcitx's toggle, a plugin window that
+  // wants the keyboard — has to close the island first and wait a beat. Every
+  // such action goes through here rather than hand-rolling its own timer.
+  property var focusReturnActions: []
+  Timer {
+    id: focusReturnTimer
+    interval: 160
+    onTriggered: {
+      var actions = root.focusReturnActions
+      root.focusReturnActions = []
+      for (var i = 0; i < actions.length; i++) {
+        try { actions[i]() } catch (e) { console.warn("island: focus-return action failed", e) }
+      }
+    }
+  }
+  function withAppFocus(action) {
+    if (typeof action !== "function") return
+    if (!surfaceOpen) { action(); return }
+    view = "rest"
+    focusReturnActions.push(action)
+    focusReturnTimer.restart()
+  }
+
   // The HUD shows when the volume or mute state differs from the last one seen
   // on the same output. An output's first reading (at startup, or after
   // switching outputs) is it reporting in, so it's only remembered.
@@ -278,6 +303,7 @@ Item {
   IslandUpdater {
     id: islandUpdater
     pluginDir: root.setup.pluginDir
+    allowUpdate: root.settings.autoUpdate
     onAvailable: root.announceUpdate()
   }
   OsdBridge { id: osdBridge; host: root }
@@ -286,11 +312,11 @@ Item {
   function announceUpdate() {
     if (surfaceOpen || view === "feedback") { updateAnnouncePending = true; return }
     updateAnnouncePending = false
-    showBanner(updater.bannerRow("A new version is ready. Click to update."), 10000)
+    showBanner(updater.bannerRow("发现新版本，点击更新"), 10000)
   }
   function updateIsland() {
     if (updater.status === "updating") return
-    showBanner(updater.bannerRow("Updating Island…"), 120000)
+    showBanner(updater.bannerRow("正在更新 island…"), 120000)
     updater.update()
   }
 
@@ -316,7 +342,7 @@ Item {
     home: root.home
     historyVisible: root.view === "controls"
     onArrived: function(row) {
-      if (!root.surfaceOpen) root.showFeedback(String(row.summary || row.app || "Notification"), root.settings.bannerSeconds * 1000, "notification")
+      if (!root.surfaceOpen) root.showFeedback(String(row.summary || row.app || "通知"), root.settings.bannerSeconds * 1000, "notification")
     }
   }
   // The island's own banners (setup, updates) in the notification pill.
@@ -338,6 +364,24 @@ Item {
     view = view === name ? "rest" : name
     return view
   }
+
+  // A string's width in half-width (Latin) units, so the pills' text-length
+  // heuristics keep working for Chinese: one CJK character, and the full-width
+  // punctuation our copy uses (… and ·), takes the room of two Latin ones at
+  // the same font size. ASCII strings come back as their length, exactly as
+  // before; a surrogate pair counts as its two units.
+  function textUnits(text) {
+    var units = 0
+    for (var i = 0; i < text.length; i++) {
+      var c = text.charCodeAt(i)
+      units += (c >= 0x1100 && c <= 0x115f) || (c >= 0x2e80 && c <= 0xa4cf)
+        || (c >= 0xac00 && c <= 0xd7a3) || (c >= 0xf900 && c <= 0xfaff)
+        || (c >= 0xfe30 && c <= 0xfe6f) || (c >= 0xff00 && c <= 0xff60)
+        || (c >= 0xffe0 && c <= 0xffe6) || c === 0x2026 || c === 0x00b7 ? 2 : 1
+    }
+    return units
+  }
+
 
   IpcHandler {
     target: "guilhermerisu.island"
@@ -377,6 +421,7 @@ Item {
       return "rest"
     }
   }
+
 
   // An open view closes on a click outside the island (see outsideArea),
   // armed a moment after it opens so the click that opened it can't count.
@@ -469,16 +514,19 @@ Item {
           y: root.barHidden && root.view === "rest" ? -height - 12 : root.settings.notch ? 0 : 8
           Behavior on y { MotionAnimation { theme: root.theme; pace: "standard" } }
           readonly property Item activeSurface: views.surfaceFor(root.view)
+          // The two branches that size themselves by text length measure with
+          // textUnits(): the setup warning is Chinese now, and a plain
+          // character count would never reach its wide branch.
           readonly property real targetWidth: activeSurface ? activeSurface.islandWidth
             : root.notificationPill ? 440
             : root.volumePill ? 240
-            : root.osdPill ? (root.osdProgress ? 240 : (root.osdMessage.length > 26 ? 340 : 280))
+            : root.osdPill ? (root.osdProgress ? 240 : (root.textUnits(root.osdMessage) > 26 ? 340 : 280))
             : root.activityPill && root.activities.current.kind === "bluetooth" ? 360
             : root.clipboardPill || root.activityPill ? 320
             : root.workspacesPill ? root.workspaceIds.length * 24 + 42
             : root.addonPill ? root.addonPill.pillWidth
             : root.view === "feedback" ? 280
-            : root.setup.needsSetup ? (root.setup.warning.length > 24 ? 320 : 250)
+            : root.setup.needsSetup ? (root.textUnits(root.setup.warning) > 24 ? 320 : 250)
             : root.downloadDone ? 360
             : root.downloadActive ? (root.downloads.active ? 240 : 280)
             : root.mediaPill ? 240

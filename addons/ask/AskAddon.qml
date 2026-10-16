@@ -16,8 +16,11 @@ import ".."
 // screens showing its answer.
 Addon {
   id: askAddon
-  views: [{ name: "answer", component: answerView }]
-  launcherHint: "ask"
+  // The width/padding/radius here are the shape the island uses before the
+  // view exists (its Loader is only made when the view first opens), so they
+  // match AnswerView's first frame: `compact` while it thinks, before any turn.
+  views: [{ name: "answer", width: 280, padding: 14, radius: 44, component: answerView }]
+  launcherHint: "问 AI"
 
   Component {
     id: answerView
@@ -41,7 +44,7 @@ Addon {
   // packages stay unloaded and the one that provides those tools is named,
   // which keeps a launcher question from reaching any other extension.
   readonly property bool web: addon.option("web") !== false
-  readonly property var webTools: ({ web_search: "Searching the web...", fetch_content: "Reading a page...", source_check: "Checking sources..." })
+  readonly property var webTools: ({ web_search: "正在搜索网络…", fetch_content: "正在读取网页…", source_check: "正在核对来源…" })
   // What the pill says while it is out fetching.
   property string working: ""
 
@@ -58,6 +61,20 @@ Addon {
   // an answer above it: an id of ours, so every turn of one conversation lands
   // in the same session file.
   property string sessionId: ""
+
+  // ---------- whose answer is on screen ----------
+
+  // One number per question. A run carries the number it was started under,
+  // and `stopRun` moves the number past it before tearing that run down, so a
+  // superseded run — stopped by Esc, or replaced by a question asked mid-answer
+  // — can no longer speak for the turn on screen. Without this, the exit of a
+  // run killed mid-answer landed as "没有返回回答" on the fresh question
+  // that took its place.
+  property int generation: 0
+  // The run of the question on screen, or null. One Process object per question
+  // rather than one reused Process: an object that's gone has no handlers left
+  // to fire.
+  property var run: null
 
   // Pi lists the sessions it's told to reuse among your own work, where a
   // desktop question would turn up in its resume picker; give it a folder of
@@ -98,11 +115,31 @@ Addon {
     working = ""
     busy = true
     host.view = "answer"
-    runner.command = runCommand(what)
-    runner.running = true
+    startRun(what)
   }
 
-  function stopRun() { if (runner.running) runner.running = false }
+  function startRun(what) {
+    generation += 1
+    var run = runComponent.createObject(askAddon, { gen: generation })
+    askAddon.run = run
+    run.command = runCommand(what)
+    run.running = true
+  }
+
+  // Stop the run on screen: Esc, the view closing, or a new question taking its
+  // place. Its object goes with it, so nothing it still has queued reaches the
+  // conversation, and `busy` comes down here instead of waiting for an exit that
+  // belongs to nobody.
+  function stopRun() {
+    busy = false
+    working = ""
+    var run = askAddon.run
+    if (!run) return
+    generation += 1
+    askAddon.run = null
+    run.running = false
+    run.destroy()
+  }
 
   // The command line for this turn. Pi streams its events as JSON with
   // `--mode json`; skills, prompt templates, themes, MCP and context files are
@@ -127,6 +164,7 @@ Addon {
   // configured, the Omarchy commands for common jobs, and the live list of
   // key bindings (loaded once, like the Keybindings view does).
   readonly property string systemPrompt: "You answer questions typed into the search bar of Omarchy, "
+    + "Answer in the same language the question is written in. "
     + "Be brief: give the direct answer first, then at most a few short sentences or a short list. "
     + "Reply in plain text like Siri: no Markdown, no bold, no headings, no code formatting; "
     + "write key combinations as Super+Alt+Space. For questions about this "
@@ -164,13 +202,15 @@ Addon {
     }
   }
 
-  // Pi's own JSON events.
-  function handle(line) {
+  // Pi's own JSON events, from the run of the question on screen. Anything a
+  // superseded run has still queued is dropped.
+  function handle(gen, line) {
+    if (gen !== generation) return
     var event
     try { event = JSON.parse(line) } catch (e) { return }
     if (event.type === "tool_execution_start") {
       // Out on the web: say so in the pill, which otherwise looks idle.
-      working = String(webTools[String(event.toolName || "")] || "Working...")
+      working = String(webTools[String(event.toolName || "")] || "思考中…")
     } else if (event.type === "message_update" && event.assistantMessageEvent
         && event.assistantMessageEvent.type === "text_delta") {
       // Assistant text arrives in deltas and opens with a blank line.
@@ -185,7 +225,7 @@ Addon {
     } else if (event.type === "agent_end" || event.type === "agent_settled") {
       settled()
     } else if (event.type === "error" || event.type === "turn.failed") {
-      error = String((event.error && event.error.message) || event.message || "Couldn't get an answer")
+      error = String((event.error && event.error.message) || event.message || "没能拿到回答")
       working = ""
       busy = false
     }
@@ -195,30 +235,45 @@ Addon {
     busy = false
   }
 
-  Process {
-    id: runner
-    workingDirectory: "/tmp"
-    stdout: SplitParser { onRead: function(line) { askAddon.handle(line) } }
-    stderr: StdioCollector { id: runnerErr; waitForEnd: true }
-    onExited: function(code) {
-      if (askAddon.busy && !askAddon.text && !askAddon.error) {
-        // Pi says "Warning: No project session found ...; creating a new
-        // session" on every first turn, so that is not what went wrong when
-        // nothing came back.
-        var notes = String(runnerErr.text || "").trim().split("\n")
-          .filter(function(line) { return !/^Warning: /.test(line.trim()) })
-        askAddon.error = code === 0 || !notes.length ? "No answer came back" : notes[notes.length - 1]
+  // One question's run of the command-line tool. `gen` is the question it was
+  // started for (see `generation`); a run whose number is no longer the newest
+  // answers to nobody.
+  Component {
+    id: runComponent
+    Process {
+      property int gen: 0
+      workingDirectory: "/tmp"
+      stdout: SplitParser {
+        onRead: function(line) { askAddon.handle(gen, line) }
       }
-      askAddon.working = ""
-      askAddon.busy = false
+      stderr: StdioCollector { id: runErr; waitForEnd: true }
+      onExited: function(code) {
+        askAddon.finishRun(gen, code, String(runErr.text || ""))
+      }
     }
+  }
+
+  // The run ended. Only the newest one gets to say anything, and only while its
+  // turn is still the one on screen: an answer you stopped, or that a newer
+  // question replaced, leaves nothing behind.
+  function finishRun(gen, code, notes) {
+    if (gen !== generation || !busy) return
+    working = ""
+    busy = false
+    if (text !== "" || error !== "") return
+    // Pi says "Warning: No project session found ...; creating a new
+    // session" on every first turn, so that is not what went wrong when
+    // nothing came back.
+    var lines = String(notes || "").trim().split("\n")
+      .filter(function(line) { return !/^Warning: /.test(line.trim()) })
+    error = code === 0 || !lines.length ? "没有返回回答" : lines[lines.length - 1]
   }
 
   // The Ask row: first when the text reads like a question.
   function launcherRow(text) {
     return {
       glyph: provider.glyph, tile: provider.tile, ink: provider.ink,
-      label: "Ask " + provider.name, detail: "“" + text + "”",
+      label: "问 " + provider.name, detail: "“" + text + "”",
       first: looksLikeQuestion(text),
       run: function() { askAddon.ask(text) }
     }

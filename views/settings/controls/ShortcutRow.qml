@@ -60,7 +60,7 @@ Item {
     Text {
       id: keysText
       anchors.centerIn: parent
-      text: shortcutRow.recording ? (shortcutRow.keybinds.recordHint || "Type Shortcut") : shortcutRow.keybinds.shortcutText(shortcutRow.entry.keys)
+      text: shortcutRow.recording ? (shortcutRow.keybinds.recordHint || "按下快捷键") : shortcutRow.keybinds.shortcutText(shortcutRow.entry.keys)
       color: shortcutRow.recording ? shortcutRow.view.accent
         : shortcutRow.entry.keys === "" ? shortcutRow.view.textMuted : shortcutRow.view.text
       font.family: shortcutRow.view.host.theme.textFontFamily
@@ -81,8 +81,8 @@ Item {
     y: 7
     spacing: 6
     visible: shortcutRow.asking
-    SettingsButton { view: shortcutRow.view; label: "Cancel"; onClicked: shortcutRow.keybinds.cancelPending() }
-    SettingsButton { view: shortcutRow.view; label: "Replace"; primary: true; onClicked: shortcutRow.keybinds.applyPending() }
+    SettingsButton { view: shortcutRow.view; label: "取消"; onClicked: shortcutRow.keybinds.cancelPending() }
+    SettingsButton { view: shortcutRow.view; label: "替换"; primary: true; onClicked: shortcutRow.keybinds.applyPending() }
   }
   Row {
     x: 14
@@ -96,7 +96,7 @@ Item {
       font.pixelSize: shortcutRow.view.host.theme.px(12)
     }
     Text {
-      text: shortcutRow.keybinds.shortcutText(shortcutRow.keybinds.pendingKeys) + " is used by " + shortcutRow.keybinds.pendingConflict
+      text: shortcutRow.keybinds.shortcutText(shortcutRow.keybinds.pendingKeys) + " 已被「" + shortcutRow.keybinds.pendingConflict + "」使用"
       color: shortcutRow.view.textMuted
       font.family: shortcutRow.view.host.theme.textFontFamily
       font.pixelSize: shortcutRow.view.detailCaptionFontSize

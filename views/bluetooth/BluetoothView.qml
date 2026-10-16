@@ -61,7 +61,7 @@ ColumnLayout {
         pending: action
       })
     }
-    var titles = { connected: "Connected", known: "My Devices", nearby: "Nearby" }
+    var titles = { connected: "已连接", known: "我的设备", nearby: "附近" }
     var list = []
     for (var key in titles) {
       if (key === "nearby" && !scanning) continue
@@ -83,9 +83,9 @@ ColumnLayout {
     var mine = rows.filter(function(r) { return r.address && r.section !== "nearby" })
     var other = rows.filter(function(r) { return r.address && r.section === "nearby" })
     var out = []
-    if (mine.length) out = out.concat([{ header: "My Devices" }], mine)
+    if (mine.length) out = out.concat([{ header: "我的设备" }], mine)
     if (other.length || scanning) {
-      out.push({ header: "Other Devices", toggle: true })
+      out.push({ header: "其他设备", toggle: true })
       if (otherOpen) out = out.concat(other)
     }
     return out
@@ -212,12 +212,12 @@ ColumnLayout {
       Layout.preferredHeight: 32
       radius: 16
       color: backMouse.containsMouse ? bt.well : bt.card
-      Tooltip { theme: bt.host.theme; text: "Control Center" }
+      Tooltip { theme: bt.host.theme; text: "控制中心" }
       Text { anchors.centerIn: parent; text: "󰅁"; color: bt.text; font.family: bt.iconFont; font.pixelSize: bt.host.theme.px(17) }
       MouseArea { id: backMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: bt.host.view = "controls" }
     }
     Text {
-      text: "Bluetooth"
+      text: "蓝牙"
       color: bt.text
       font.family: bt.host.theme.textFontFamily
       font.pixelSize: bt.host.theme.px(17)
@@ -248,7 +248,7 @@ ColumnLayout {
         Layout.preferredHeight: 70
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
-        text: !bt.adapter ? "No Bluetooth adapter" : !bt.powered ? "Bluetooth is off" : "Looking for devices…"
+        text: !bt.adapter ? "无蓝牙适配器" : !bt.powered ? "蓝牙已关闭" : "正在搜索设备…"
         color: bt.textMuted
         font.family: bt.host.theme.textFontFamily
         font.pixelSize: bt.host.theme.px(14)
@@ -381,9 +381,9 @@ ColumnLayout {
               }
               Text {
                 width: parent.width
-                readonly property string status: row.modelData.pending === "connecting" ? "Connecting…"
-                  : row.modelData.pending === "disconnecting" ? "Disconnecting…"
-                  : row.modelData.pending === "forgetting" ? "Forgetting…"
+                readonly property string status: row.modelData.pending === "connecting" ? "正在连接…"
+                  : row.modelData.pending === "disconnecting" ? "正在断开…"
+                  : row.modelData.pending === "forgetting" ? "正在移除…"
                   : ""
                 visible: status !== ""
                 text: status
@@ -433,7 +433,7 @@ ColumnLayout {
                 anchors.verticalCenter: parent.verticalCenter
                 width: 26; height: 26; radius: 13
                 color: forgetMouse.containsMouse ? bt.wellHover : "transparent"
-                Tooltip { theme: bt.host.theme; text: "Forget This Device" }
+                Tooltip { theme: bt.host.theme; text: "移除设备" }
                 Text {
                   anchors.centerIn: parent
                   text: "󰅖"

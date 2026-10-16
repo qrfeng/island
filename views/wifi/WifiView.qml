@@ -74,7 +74,7 @@ ColumnLayout {
         pending: pending
       })
     }
-    var titles = { connected: "Connected", known: "Saved Networks", nearby: "Available" }
+    var titles = { connected: "已连接", known: "已保存", nearby: "可用" }
     var list = []
     for (var key in titles) {
       var group = groups[key].sort(key === "nearby"
@@ -97,9 +97,9 @@ ColumnLayout {
     var known = rows.filter(function(r) { return r.address && r.section !== "nearby" })
     var other = rows.filter(function(r) { return r.address && r.section === "nearby" })
     var out = []
-    if (known.length) out = out.concat([{ header: "Known Networks" }], known)
+    if (known.length) out = out.concat([{ header: "已知网络" }], known)
     if (other.length) {
-      out.push({ header: "Other Networks", toggle: true })
+      out.push({ header: "其他网络", toggle: true })
       if (otherOpen) out = out.concat(other)
     }
     return out
@@ -174,7 +174,7 @@ ColumnLayout {
     function onConnectionFailed(reason) {
       wf.failedName = wf.attempt.name
       wf.failedReason = reason === ConnectionFailReason.NoSecrets || reason === ConnectionFailReason.WifiAuthTimeout
-        ? "Wrong password" : "Couldn't connect"
+        ? "密码错误" : "连接失败"
     }
   }
 
@@ -221,7 +221,7 @@ ColumnLayout {
       Layout.preferredHeight: 32
       radius: 16
       color: backMouse.containsMouse ? wf.well : wf.card
-      Tooltip { theme: wf.host.theme; text: "Control Center" }
+      Tooltip { theme: wf.host.theme; text: "控制中心" }
       Text { anchors.centerIn: parent; text: "󰅁"; color: wf.text; font.family: wf.iconFont; font.pixelSize: wf.host.theme.px(17) }
       MouseArea { id: backMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: wf.host.view = "controls" }
     }
@@ -257,7 +257,7 @@ ColumnLayout {
         Layout.preferredHeight: 70
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
-        text: !wf.device ? "No Wi-Fi adapter" : !wf.powered ? "Wi-Fi is off" : "Looking for networks…"
+        text: !wf.device ? "无 Wi-Fi 适配器" : !wf.powered ? "Wi-Fi 已关闭" : "正在搜索网络…"
         color: wf.textMuted
         font.family: wf.host.theme.textFontFamily
         font.pixelSize: wf.host.theme.px(14)
@@ -393,8 +393,8 @@ ColumnLayout {
               }
               Text {
                 width: parent.width
-                readonly property string status: row.modelData.pending === "connecting" ? "Connecting…"
-                  : row.modelData.pending === "disconnecting" ? "Disconnecting…"
+                readonly property string status: row.modelData.pending === "connecting" ? "正在连接…"
+                  : row.modelData.pending === "disconnecting" ? "正在断开…"
                   : row.modelData.name === wf.failedName ? wf.failedReason
                   : ""
                 visible: status !== ""
@@ -455,7 +455,7 @@ ColumnLayout {
                   anchors.fill: parent
                   verticalAlignment: Text.AlignVCenter
                   visible: password.text === ""
-                  text: "Password for " + (row.modelData.name || "")
+                  text: "输入 " + (row.modelData.name || "") + " 的密码"
                   color: wf.textMuted
                   font: password.font
                 }
@@ -475,7 +475,7 @@ ColumnLayout {
                 anchors.verticalCenter: parent.verticalCenter
                 width: 26; height: 26; radius: 13
                 color: forgetMouse.containsMouse ? wf.wellHover : "transparent"
-                Tooltip { theme: wf.host.theme; text: "Forget This Network" }
+                Tooltip { theme: wf.host.theme; text: "忘记网络" }
                 Text {
                   anchors.centerIn: parent
                   text: "󰅖"
@@ -523,7 +523,7 @@ ColumnLayout {
           anchors.left: parent.left
           anchors.leftMargin: 10
           anchors.verticalCenter: parent.verticalCenter
-          text: "Wi-Fi Settings…"
+          text: "Wi-Fi 设置…"
           color: wf.text
           font.family: wf.host.theme.textFontFamily
           font.pixelSize: wf.host.theme.px(15)

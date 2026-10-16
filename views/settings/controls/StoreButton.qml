@@ -16,7 +16,7 @@ Rectangle {
   Text {
     id: buttonText
     anchors.centerIn: parent
-    text: button.added ? "REMOVE" : "ADD"
+    text: button.added ? "移除" : "添加"
     color: button.added ? button.view.textMuted : button.view.text
     font.family: button.view.host.theme.textFontFamily
     font.pixelSize: button.view.host.theme.px(12)

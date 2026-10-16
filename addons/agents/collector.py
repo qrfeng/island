@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Agent usage: Pi's token figures, plus everything else Omarchy records.
+"""Agent usage: Pi and Claude Code token figures, plus everything else Omarchy records.
 
 Pi writes no usage record anywhere but its session transcripts, and Omarchy's
 own collectors only count a Pi session when it ran on an Anthropic provider
@@ -16,21 +16,37 @@ It plays both roles Omarchy's Agents panel is built around:
              and Fireworks - into one line of JSON on stdout, reduced to what
              the island draws. That line is the addon's whole data contract.
 
+Pi and Claude Code are both read from their own transcripts, so both tabs are
+local and instant: Claude Code writes the same shape of transcript to
+~/.claude/projects/<folder>/<session>.jsonl (its turns are `type: "assistant"`
+and its usage keys are snake_case), so `scan_sessions` takes either dialect.
+Claude Code's authoritative figures live behind `claude auth` and a network
+call, but the token counts are in the files, which is what the panel draws.
+
 Costs in the transcripts are US dollars, what the endpoints bill in; --rate
 carries a USD->CNY figure into the `costCny` fields the island draws, so the
 panel can show the money in yuan.
 
+The records keep their byProvider and byProject breakdowns, because that is
+Omarchy's own contract and its panel draws them; the island stopped drawing
+them (the endpoint and the folder behind a token count is not something its
+one screen has room for), so --print drops both before the view ever sees them.
+
 With --others it also runs `omarchy agent usage update` and keeps its records:
-that asks Anthropic
-and Codex for their rate limits over the network; off by default because those
-round trips are slow and this machine has neither signed in.
+that asks Anthropic and Codex for their rate limits over the network; off by
+default because those round trips are slow and this machine has neither signed
+in.
 
 Every figure here comes from what the CLIs already wrote to disk; nothing is
 posted anywhere. Session format: one JSON object per line, and the ones that
 carry usage are
-{"type":"message","timestamp":"...","message":{"role":"assistant",
+Pi:     {"type":"message","timestamp":"...","message":{"role":"assistant",
  "provider":"...","model":"...","usage":{"input":N,"output":N,
  "cacheRead":N,"cacheWrite":N,"totalTokens":N,"cost":{"total":N}}}}
+Claude: {"type":"assistant","timestamp":"...","cwd":"...","uuid":"...",
+ "message":{"role":"assistant","model":"...","usage":{"input_tokens":N,
+ "output_tokens":N,"cache_read_input_tokens":N,
+ "cache_creation_input_tokens":N}}}
 """
 
 from __future__ import annotations
@@ -47,6 +63,8 @@ from typing import Any
 # Session roots: Pi's, and omp's, which writes the same format (Omarchy's own
 # collectors read these two together).
 SESSION_ROOTS = ["~/.pi/agent/sessions", "~/.omp/agent/sessions"]
+# Claude Code keeps one file per session under a folder named after its cwd.
+CLAUDE_ROOTS = ["~/.claude/projects"]
 RECENT_DAYS = 7
 
 
@@ -81,6 +99,34 @@ def local_day_of(raw: Any) -> str:
     return day_string(dt.datetime.now().date())
 
 
+def pick(source: dict, *keys: str) -> Any:
+  """The first key present in a usage block.
+
+  Pi spells these `input`, Claude Code `input_tokens`, and older transcripts
+  `inputTokens`; one lookup covers all three instead of a chain of defaults.
+  """
+  for key in keys:
+    if source.get(key) is not None:
+      return source[key]
+  return 0
+
+
+def turn_cost(entry: dict, message: dict, usage: dict) -> float:
+  """What one turn cost, however that transcript records it.
+
+  Pi nests it (`usage.cost.total`), Claude Code puts `costUSD` beside the
+  message. Not every build of either writes it, and `totalCostUSD` is a running
+  session figure rather than a turn's, so it is deliberately not read here.
+  """
+  block = usage.get("cost")
+  if isinstance(block, dict) and block.get("total") is not None:
+    return money(block["total"])
+  for source in (entry, message):
+    if source.get("costUSD") is not None:
+      return money(source["costUSD"])
+  return 0.0
+
+
 def number(value: Any) -> int:
   try:
     return int(float(value))
@@ -96,7 +142,12 @@ def money(value: Any) -> float:
 
 
 def project_label(cwd: str, path: Path) -> str:
-  """Where a session ran, short: its folder name, or the directory itself."""
+  """Where a session ran, short: its folder name, or the directory itself.
+
+  Only Omarchy's own panel draws this breakdown any more; the island shows one
+  total per agent, because which folder spent a token is not the interesting
+  half of it.
+  """
   cwd = str(cwd or "").rstrip("/")
   if cwd:
     return cwd.rsplit("/", 1)[-1] or cwd
@@ -106,7 +157,13 @@ def project_label(cwd: str, path: Path) -> str:
 
 
 def scan_sessions(roots: list[str]) -> dict[str, Any]:
-  """Every assistant turn with a usage block in Pi's and omp's sessions."""
+  """Every assistant turn with a usage block under `roots`.
+
+  Pi and omp write `type: "message"` with `message.role` and camelCase usage;
+  Claude Code writes `type: "assistant"` with snake_case usage and repeats the
+  cwd on every line. Both dialects are read here so the two agents are counted
+  the same way.
+  """
   today = day_string(dt.datetime.now().date())
   recent_dates = [
     day_string(dt.datetime.now().date() - dt.timedelta(days=offset))
@@ -155,16 +212,22 @@ def scan_sessions(roots: list[str]) -> dict[str, Any]:
           except ValueError:
             continue
           message = entry.get("message") if isinstance(entry.get("message"), dict) else {}
-          if entry.get("type") != "message" or message.get("role") != "assistant":
+          if entry.get("type") not in ("message", "assistant"):
             continue
+          if message.get("role") != "assistant":
+            continue
+          # Pi names the folder once in its session header; Claude Code repeats
+          # it on each of its lines.
+          if entry.get("cwd"):
+            cwd = str(entry["cwd"])
           usage = message.get("usage") if isinstance(message.get("usage"), dict) else {}
-          key = "%s:%s" % (path, entry.get("id") or line_number)
+          key = "%s:%s" % (path, entry.get("id") or entry.get("uuid") or line_number)
           if key in seen:
             continue
-          input_tokens = number(usage.get("input", usage.get("inputTokens")))
-          output_tokens = number(usage.get("output", usage.get("outputTokens")))
-          cache_read = number(usage.get("cacheRead", usage.get("cache_read_input_tokens")))
-          cache_write = number(usage.get("cacheWrite", usage.get("cache_creation_input_tokens")))
+          input_tokens = number(pick(usage, "input", "inputTokens", "input_tokens"))
+          output_tokens = number(pick(usage, "output", "outputTokens", "output_tokens"))
+          cache_read = number(pick(usage, "cacheRead", "cache_read_input_tokens"))
+          cache_write = number(pick(usage, "cacheWrite", "cache_creation_input_tokens"))
           total = input_tokens + output_tokens + cache_read + cache_write
           if total <= 0:
             total = number(usage.get("totalTokens"))
@@ -175,7 +238,7 @@ def scan_sessions(roots: list[str]) -> dict[str, Any]:
           model = str(message.get("model") or "unknown")
           provider = str(message.get("provider") or "unknown")
           day = local_day_of(entry.get("timestamp") or message.get("timestamp"))
-          cost = money((usage.get("cost") or {}).get("total"))
+          cost = turn_cost(entry, message, usage)
 
           bucket = models.setdefault(
             model,
@@ -260,6 +323,53 @@ def scan_sessions(roots: list[str]) -> dict[str, Any]:
   }
 
 
+# The agents whose tokens we count ourselves, off their own transcripts, so
+# they need no login and no network. `write` marks the ones whose record is
+# handed to Omarchy's panel as well: pi.json is ours to add, claude.json is
+# `omarchy agent usage update`'s to write, so Claude's figures are merged from
+# disk at --print time instead of being overwritten there.
+LOCAL_AGENTS = [
+  {"id": "pi", "name": "Pi", "roots": SESSION_ROOTS, "write": True},
+  {"id": "claude", "name": "Claude Code", "roots": CLAUDE_ROOTS, "write": False},
+]
+
+
+def yuan(stats: dict[str, Any], rate: float) -> dict[str, Any]:
+  """Add the yuan fields the island draws to a stats dict, in place.
+
+  The transcripts speak dollars because that is what the endpoints bill in, and
+  one rate converts the lot (--rate, adjustable in Settings > Addons > Agent
+  usage).
+  """
+  stats["todayCostCny"] = round(stats["todayCostUsd"] * rate, 4)
+  stats["totalCostCny"] = round(stats["totalCostUsd"] * rate, 4)
+  stats["costByModelCny"] = {
+    model: round(value * rate, 4) for model, value in (stats.get("costByModel") or {}).items()
+  }
+  for table in ("byProvider", "byProject"):
+    for row in stats.get(table) or []:
+      row["costCny"] = round(row["costUsd"] * rate, 4)
+  return stats
+
+
+def transcript_record(spec: dict[str, Any], stats: dict[str, Any]) -> dict[str, Any]:
+  """A usage record in Omarchy's contract, from what the transcripts say."""
+  return {
+    "schemaVersion": 1,
+    "id": spec["id"],
+    "name": spec["name"],
+    "updatedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
+    "ready": stats["totalPrompts"] > 0,
+    "hasLocalStats": True,
+    "scope": "cli",
+    "tierLabel": "local sessions",
+    "limits": [],
+    "usageStatusText": "" if stats["totalPrompts"] else "No %s sessions yet" % spec["name"],
+    "authHelpText": "",
+    **stats,
+  }
+
+
 def main() -> int:
   parser = argparse.ArgumentParser()
   parser.add_argument("--print", dest="print_merged", action="store_true")
@@ -268,40 +378,23 @@ def main() -> int:
   args = parser.parse_args()
   rate = args.rate if args.rate > 0 else 6.69
 
-  stats = scan_sessions(SESSION_ROOTS)
-  record = {
-    "schemaVersion": 1,
-    "id": "pi",
-    "name": "Pi",
-    "updatedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
-    "ready": stats["totalPrompts"] > 0,
-    "hasLocalStats": True,
-    "scope": "cli",
-    "tierLabel": "local sessions",
-    "limits": [],
-    "usageStatusText": "" if stats["totalPrompts"] else "No Pi sessions yet",
-    "authHelpText": "",
-  }
-  record.update(stats)
-  # Yuan, for the island: the transcripts speak dollars because that is what
-  # the endpoints bill in, and one rate converts the lot (--rate, adjustable in
-  # Settings > Addons > Agent usage).
-  record["todayCostCny"] = round(stats["todayCostUsd"] * rate, 4)
-  record["totalCostCny"] = round(stats["totalCostUsd"] * rate, 4)
-  record["costByModelCny"] = {
-    model: round(value * rate, 4) for model, value in (stats.get("costByModel") or {}).items()
-  }
-  for table in ("byProvider", "byProject"):
-    for row in stats.get(table) or []:
-      row["costCny"] = round(row["costUsd"] * rate, 4)
-
-  target = usage_dir() / "pi.json"
-  tmp = target.with_suffix(".json.tmp")
-  tmp.write_text(json.dumps(record, separators=(",", ":")), encoding="utf-8")
-  tmp.replace(target)
+  scanned: dict[str, dict[str, Any]] = {}
+  written: dict[str, Any] = {}
+  for spec in LOCAL_AGENTS:
+    stats = yuan(scan_sessions(spec["roots"]), rate)
+    scanned[spec["id"]] = stats
+    if not spec["write"]:
+      continue
+    # Omarchy's own contract, so its Agents panel gains the tab without either
+    # side knowing about the other.
+    written = transcript_record(spec, stats)
+    target = usage_dir() / ("%s.json" % spec["id"])
+    tmp = target.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(written, separators=(",", ":")), encoding="utf-8")
+    tmp.replace(target)
 
   if not args.print_merged:
-    print(json.dumps(record, separators=(",", ":")))
+    print(json.dumps(written, separators=(",", ":")))
     return 0
 
   if args.others:
@@ -319,7 +412,10 @@ def main() -> int:
     except (OSError, subprocess.SubprocessError):
       pass
 
-  records = []
+  # Omarchy's records first, keyed by agent id, then the transcript figures
+  # laid over them: the session files are authoritative about tokens, the
+  # collector output about rate limits and subscription state.
+  found: dict[str, dict[str, Any]] = {}
   for path in sorted(usage_dir().glob("*.json")):
     try:
       data = json.loads(path.read_text(encoding="utf-8"))
@@ -327,6 +423,26 @@ def main() -> int:
       continue
     if not isinstance(data, dict) or not data.get("id"):
       continue
+    found[str(data["id"])] = data
+
+  for spec in LOCAL_AGENTS:
+    stats = scanned[spec["id"]]
+    merged = dict(found.get(spec["id"]) or {})
+    merged.setdefault("id", spec["id"])
+    merged.setdefault("name", spec["name"])
+    merged.update(stats)
+    merged["updatedAt"] = dt.datetime.now(dt.timezone.utc).isoformat()
+    if stats["totalPrompts"]:
+      # Sessions on disk beat "Waiting for auth": Claude's subscription figures
+      # need a login, its token counts do not.
+      merged["ready"] = True
+      merged["usageStatusText"] = ""
+      if not merged.get("tierLabel"):
+        merged["tierLabel"] = "local sessions"
+    found[spec["id"]] = merged
+
+  records = []
+  for data in found.values():
     usage = data.get("modelUsage") or {}
     all_time = 0
     for bucket in usage.values():
@@ -377,8 +493,9 @@ def main() -> int:
           ),
           key=lambda row: -row["tokens"],
         )[:10],
-        "byProvider": data.get("byProvider") or [],
-        "byProject": data.get("byProject") or [],
+        # No byProvider / byProject here on purpose: the view draws one total
+        # per agent, so the endpoint and the folder would be two more rows to
+        # read for nothing. They stay in the records Omarchy's panel uses.
         "limits": [
           {
             "label": str(limit.get("label") or "Limit"),
@@ -395,10 +512,12 @@ def main() -> int:
       }
     )
   if not args.others:
-    # Everything but Pi is another tool's subscription, and its collector only
-    # speaks for itself: with no Claude or Codex signed in, those tabs are
-    # empty noise. --others brings them back.
-    records = [own for own in records if own["id"] == "pi"]
+    # Pi and Claude Code we can count from their own transcripts. Everything
+    # else is another tool's subscription, and its collector only speaks for
+    # itself: with nothing signed in, those tabs are empty noise. --others
+    # brings them back.
+    counted = {str(spec["id"]) for spec in LOCAL_AGENTS}
+    records = [own for own in records if own["id"] in counted]
   records.sort(key=lambda row: (-row["allTimeTokens"], row["name"]))
   print(json.dumps({"generatedAt": dt.datetime.now().isoformat(), "agents": records},
                    separators=(",", ":")))

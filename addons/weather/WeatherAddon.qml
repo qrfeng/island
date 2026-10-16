@@ -134,17 +134,17 @@ Addon {
 
   // WMO weather codes, as Open-Meteo reports them (see WeatherIcon too).
   function describe(code) {
-    if (code === 0) return "Clear"
-    if (code === 1) return "Mainly clear"
-    if (code === 2) return "Partly cloudy"
-    if (code === 3) return "Overcast"
-    if (code === 45 || code === 48) return "Fog"
-    if (code >= 51 && code <= 57) return "Drizzle"
-    if (code >= 61 && code <= 67) return code >= 65 ? "Heavy rain" : "Rain"
-    if (code >= 71 && code <= 77) return "Snow"
-    if (code >= 80 && code <= 82) return "Rain showers"
-    if (code === 85 || code === 86) return "Snow showers"
-    if (code >= 95) return "Thunderstorm"
-    return "Unknown"
+    if (code === 0) return "晴"
+    if (code === 1) return "基本晴"
+    if (code === 2) return "多云"
+    if (code === 3) return "阴"
+    if (code === 45 || code === 48) return "雾"
+    if (code >= 51 && code <= 57) return "毛毛雨"
+    if (code >= 61 && code <= 67) return code >= 65 ? "大雨" : "雨"
+    if (code >= 71 && code <= 77) return "雪"
+    if (code >= 80 && code <= 82) return "阵雨"
+    if (code === 85 || code === 86) return "阵雪"
+    if (code >= 95) return "雷阵雨"
+    return "未知"
   }
 }

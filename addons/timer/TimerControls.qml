@@ -62,7 +62,7 @@ Item {
     anchors.right: time.left
     anchors.rightMargin: 8
     y: time.y + time.baselineOffset - baselineOffset
-    text: controls.phase === "paused" ? "Paused" : "Timer"
+    text: controls.phase === "paused" ? "已暂停" : "计时器"
     color: controls.timer.tint
     font.family: controls.theme.textFontFamily
     font.pixelSize: Math.round(controls.theme.px(controls.timeSize) * 0.4)

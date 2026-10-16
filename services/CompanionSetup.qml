@@ -26,9 +26,9 @@ Item {
   property string failure: ""
   property bool recheck: false
   readonly property bool needsSetup: status !== "" && status !== "ok"
-  readonly property string warning: installing ? "Setting up…"
-    : status === "menu-invalid" ? "Fix omarchy-menu.jsonc"
-    : failure !== "" ? "Setup failed · Click for details" : "Click to Setup"
+  readonly property string warning: installing ? "正在设置…"
+    : status === "menu-invalid" ? "修复 omarchy-menu.jsonc"
+    : failure !== "" ? "设置失败·点击查看详情" : "点击设置"
   // A failed setup's reason, for the island to show as a banner; clicking the
   // banner runs setup again.
   signal failureBanner(var row)
@@ -65,7 +65,7 @@ Item {
   function pillClicked() {
     if (status === "menu-invalid") menuEditor.running = true
     else if (failure !== "") {
-      failureBanner({ summary: "Island Setup Failed · Click to Retry", body: failure.charAt(0).toUpperCase() + failure.slice(1),
+      failureBanner({ summary: "island 设置失败·点击重试", body: failure.charAt(0).toUpperCase() + failure.slice(1),
         glyph: "󰀦", timestamp: Date.now(), islandSetupRetry: true })
     }
     else install()
@@ -96,8 +96,8 @@ Item {
     var isRunning = parts[0] === "running" && Date.now() / 1000 - Number(parts[1] || 0) < 120
     running = isRunning
     if (isRunning) { installing = true; return }
-    failure = parts[0] === "failed" ? parts.slice(1).join(" ") || "setup stopped unexpectedly"
-      : parts[0] === "running" ? "setup stopped before it finished" : ""
+    failure = parts[0] === "failed" ? parts.slice(1).join(" ") || "设置意外中断"
+      : parts[0] === "running" ? "设置中途停了" : ""
     // Keep showing "Setting up…" until the check below says how it went.
     if (companionCheck.running) recheck = true
     else check()
@@ -116,7 +116,7 @@ Item {
     onTriggered: {
       setup.running = false
       setup.installing = false
-      setup.failure = "setup didn't finish within two minutes"
+      setup.failure = "设置超过2分钟没结束"
       setup.check()
     }
   }

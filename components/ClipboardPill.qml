@@ -79,15 +79,15 @@ Item {
     text: {
       if (!pill.entry) return ""
       // Omarchy labels every PNG "Screenshot from …", even a copied image.
-      if (pill.entry.type === "image") return "Image"
-      if (pill.isFiles) return pill.files.length === 1 ? ClipboardHistory.fileName(pill.files[0]) : pill.files.length + " files"
+      if (pill.entry.type === "image") return "图片"
+      if (pill.isFiles) return pill.files.length === 1 ? ClipboardHistory.fileName(pill.files[0]) : pill.files.length + " 个文件"
       var preview = ClipboardHistory.previewText(pill.entry)
       if (pill.entry.type !== "text" || !pill.host.clipboard.isHtml(pill.entry.text)) return preview
       // Rich text from a browser arrives as HTML; show its words, not tags.
       var plain = String(pill.entry.text).replace(/<(script|style)[\s\S]*?<\/\1>/gi, " ")
         .replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&")
         .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"").replace(/\s+/g, " ").trim()
-      return plain || "Rich text"
+      return plain || "富文本"
     }
     textFormat: Text.PlainText
     elide: Text.ElideRight
@@ -104,7 +104,7 @@ Item {
     anchors.right: parent.right
     anchors.rightMargin: 16
     anchors.verticalCenter: parent.verticalCenter
-    text: "Copied"
+    text: "已复制"
     color: pill.host.theme.accent
     font.family: pill.host.theme.textFontFamily
     font.pixelSize: pill.host.theme.px(13)

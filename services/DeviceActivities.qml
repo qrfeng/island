@@ -42,7 +42,7 @@ Item {
   onOnPowerChanged: {
     if (onPower) batteryWarned = 101
     if (!ready || !onPower || !hasBattery || !settings.batteryActivity) return
-    announce({ kind: "charging", title: "Charging", status: batteryLevel + "%", battery: batteryLevel, connected: true })
+    announce({ kind: "charging", title: "充电中", status: batteryLevel + "%", battery: batteryLevel, connected: true })
   }
   onBatteryLevelChanged: {
     if (!ready || !hasBattery || onPower || batteryLevel < 0) return
@@ -50,7 +50,7 @@ Item {
     if (threshold >= batteryWarned) return
     batteryWarned = threshold
     if (settings.batteryActivity)
-      announce({ kind: "lowBattery", title: "Low Battery", status: batteryLevel + "%", battery: batteryLevel, connected: true })
+      announce({ kind: "lowBattery", title: "电量低", status: batteryLevel + "%", battery: batteryLevel, connected: true })
   }
 
   // Bluetooth: a device connecting or disconnecting.
@@ -67,7 +67,7 @@ Item {
     var change = changes(btKnown, btConnected)
     btKnown = btConnected
     if (!settings.bluetoothActivity || !change) return
-    announce({ kind: "bluetooth", title: change.device.name, status: change.connected ? "Connected" : "Disconnected",
+    announce({ kind: "bluetooth", title: change.device.name, status: change.connected ? "已连接" : "未连接",
       battery: change.connected ? change.device.battery : -1, connected: change.connected, icon: change.device.icon })
   }
 
@@ -89,14 +89,13 @@ Item {
     return null
   }
 
-  // Network: a Wi-Fi or wired device connecting or disconnecting, or a Wi-Fi
-  // device moving to another network. A Wi-Fi device is named after the
-  // network it is on, wired ones are "Ethernet". Devices are keyed by
+  // Network: a Wi-Fi device connecting or disconnecting, or moving to another
+  // network, named after the network it is on. Ethernet is left out on purpose
+  // (2026-10-16): a dock plugging in is not worth a pill. Devices are keyed by
   // interface and changes settle for a moment first: the network's name can
   // arrive after the device reports connected, which would otherwise show a
   // nameless "Wi-Fi" pill and then a second one.
-  function networkName(device, wired) {
-    if (wired) return "Ethernet"
+  function networkName(device) {
     var nets = device && device.networks ? device.networks.values : []
     for (var i = 0; i < nets.length; i++) {
       if (nets[i] && nets[i].connected) return String(nets[i].name || "")
@@ -109,9 +108,8 @@ Item {
     for (var i = 0; i < devs.length; i++) {
       var d = devs[i]
       if (!d || !d.connected) continue
-      var wired = d.type === DeviceType.Wired
-      if (!wired && d.type !== DeviceType.Wifi) continue
-      out.push({ key: String(d.name || (wired ? "wired" : "wifi")), name: networkName(d, wired), wired: wired })
+      if (d.type !== DeviceType.Wifi) continue
+      out.push({ key: String(d.name || "wifi"), name: networkName(d), wired: false })
     }
     return out
   }
@@ -128,7 +126,7 @@ Item {
     })
     netKnown = netConnected
     if (!settings.networkActivity || !change) return
-    announce({ kind: "network", title: change.device.name || "Wi-Fi", status: change.connected ? "Connected" : "Disconnected",
+    announce({ kind: "network", title: change.device.name || "Wi-Fi", status: change.connected ? "已连接" : "未连接",
       battery: -1, connected: change.connected, wired: change.device.wired })
   }
 }

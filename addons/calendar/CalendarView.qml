@@ -31,9 +31,9 @@ Item {
   readonly property int eventsShown: dayEvents.length > 3 ? 2 : 3
   readonly property var dayEvents: view.calendar.eventsOn(view.calendar.selected)
 
-  readonly property var weekdays: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-  readonly property var months: ["January", "February", "March", "April", "May", "June", "July",
-    "August", "September", "October", "November", "December"]
+  readonly property var weekdays: ["周日", "周一", "周二", "周三", "周四", "周五", "周六"]
+  readonly property var months: ["1月", "2月", "3月", "4月", "5月", "6月", "7月",
+    "8月", "9月", "10月", "11月", "12月"]
 
   implicitHeight: Math.max(month.y + month.height, left.implicitHeight)
 
@@ -127,7 +127,7 @@ Item {
       Text {
         visible: view.dayEvents.length > view.eventsShown
         readonly property int rest: view.dayEvents.length - view.eventsShown
-        text: rest + " more event" + (rest === 1 ? "" : "s")
+        text: "还有" + rest + "个日程"
         color: view.inkMuted
         font.family: view.theme.textFontFamily
         font.pixelSize: view.theme.px(12)
@@ -141,10 +141,10 @@ Item {
         visible: view.dayEvents.length === 0
         width: parent.width
         wrapMode: Text.WordWrap
-        text: status === "missing" ? "Add a calendar in Settings"
-          : status === "offline" ? "Couldn't reach your calendars"
-          : status === "loading" ? "Loading…"
-          : "No events"
+        text: status === "missing" ? "在设置中添加日历"
+          : status === "offline" ? "无法访问你的日历"
+          : status === "loading" ? "加载中…"
+          : "暂无日程"
         color: actionable && noticeMouse.containsMouse ? view.ink : view.inkMuted
         font.family: view.theme.textFontFamily
         font.pixelSize: view.theme.px(13)
@@ -199,8 +199,8 @@ Item {
     Text {
       id: monthName
       x: (view.cell - 14) / 2
-      text: view.months[view.calendar.shownMonth].toUpperCase()
-        + (view.calendar.shownYear !== view.calendar.today.getFullYear() ? " " + view.calendar.shownYear : "")
+      text: (view.calendar.shownYear !== view.calendar.today.getFullYear() ? view.calendar.shownYear + "年" : "")
+        + view.months[view.calendar.shownMonth]
       color: view.accent
       font.family: view.theme.textFontFamily
       font.pixelSize: view.theme.px(14)
@@ -238,7 +238,7 @@ Item {
       id: weekdayRow
       y: monthName.height + 12
       Repeater {
-        model: ["M", "T", "W", "T", "F", "S", "S"]
+        model: ["一", "二", "三", "四", "五", "六", "日"]
         delegate: Text {
           required property string modelData
           required property int index

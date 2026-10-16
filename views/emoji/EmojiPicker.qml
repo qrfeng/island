@@ -11,8 +11,8 @@ import "file:///usr/share/omarchy/shell/plugins/emojis/EmojiSearch.js" as EmojiS
 // picker does).
 ListPicker {
   id: emojis
-  placeholder: "Search emoji"
-  emptyText: "No emoji match"
+  placeholder: "搜索表情"
+  emptyText: "无匹配表情"
   columns: 10
   rowHeight: 54
   visibleRows: 6

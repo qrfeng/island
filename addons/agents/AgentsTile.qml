@@ -12,12 +12,12 @@ CcTile {
   icon: "\uf201"
   available: usage.hasData
   title: usage.hasData
-    ? tile.count(usage.todayTokens) + " tokens today"
-    : "Agent usage"
-  subtitle: !usage.hasData ? "No usage recorded"
+    ? "今日 " + tile.count(usage.todayTokens) + " tokens"
+    : "Agent 用量"
+  subtitle: !usage.hasData ? "暂无用量"
     : String((tile.first && tile.first.name) || "") + " / "
-      + String(Number(tile.first && tile.first.totalSessions) || 0) + " sessions"
-      + (usage.todayTokens > 0 ? "" : " / none today")
+      + String(Number(tile.first && tile.first.totalSessions) || 0) + "次会话"
+      + (usage.todayTokens > 0 ? "" : " / 今日无")
   onClicked: usage.host.view = "agents"
 
   // The agent that has spent the most, which is the one the view opens on.

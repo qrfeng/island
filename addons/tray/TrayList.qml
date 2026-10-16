@@ -5,14 +5,14 @@ import Quickshell.Widgets
 import "../../components"
 
 // The system tray as a list. Enter (or a click) on an app with a menu opens
-// that menu here, led by an "Open" row; an app without one is activated.
+// that menu here, led by an "打开" row; an app without one is activated.
 // Menus render in the island rather than as platform menus, which Omarchy's
 // shell can't show (it isn't a QApplication). Esc, ←, or Backspace on an
 // empty search goes back up.
 ListPicker {
   id: tray
-  placeholder: menuItem ? stack.map(function(s) { return s.title }).join(" › ") : "Search tray"
-  emptyText: menuItem ? "Empty menu" : SystemTray.items.values.length ? "Nothing matches" : "Nothing in the tray"
+  placeholder: menuItem ? stack.map(function(s) { return s.title }).join(" › ") : "搜索托盘"
+  emptyText: menuItem ? "菜单为空" : SystemTray.items.values.length ? "无匹配项" : "托盘暂无内容"
   rowHeight: 44
   visibleRows: 9
   items: menuItem ? menuRows : appRows
@@ -51,8 +51,8 @@ ListPicker {
   readonly property var menuRows: {
     if (!stack.length) return []
     var rows = []
-    if (stack.length === 1 && matches("Open " + stack[0].title))
-      rows.push({ key: "open", kind: "open", label: "Open " + stack[0].title, icon: "", children: false })
+    if (stack.length === 1 && matches("打开 " + stack[0].title))
+      rows.push({ key: "open", kind: "open", label: "打开 " + stack[0].title, icon: "", children: false })
     var values = stack[stack.length - 1].opener.children.values
     for (var i = 0; i < values.length; i++) {
       var e = values[i]

@@ -20,8 +20,8 @@ Item {
   property var items: []
   property string currentKey: ""
   property var applyCommand: null
-  property string placeholder: "Search…"
-  property string emptyText: "Nothing matches"
+  property string placeholder: "搜索…"
+  property string emptyText: "无匹配结果"
   property int cardWidth: 196
   property int cardHeight: 102
   property Component card
@@ -43,7 +43,12 @@ Item {
   function close() { if (active) host.view = "rest" }
 
   readonly property string query: search.text
+  // `items` can be handed over before this binding has been evaluated (the
+  // theme switcher assigns it from an async folder scan), and then a change
+  // handler below reads `filtered` mid-flight. An empty list is the honest
+  // answer for "nothing to show yet": the alternative is a TypeError per open.
   readonly property var filtered: {
+    if (!items) return []
     var q = query.trim().toLowerCase().replace(/\s+/g, "-")
     if (!q) return items
     return items.filter(function(item) { return String(item.name).toLowerCase().indexOf(q) !== -1 })
@@ -64,7 +69,7 @@ Item {
   property string lastSelectedKey: ""
   onSelectedChanged: if (selected) lastSelectedKey = selected.key
   onItemsChanged: {
-    if (!active) return
+    if (!active || !filtered) return
     for (var i = 0; i < filtered.length; i++)
       if (filtered[i].key === lastSelectedKey) { jumpTo(i); return }
     selectCurrent()

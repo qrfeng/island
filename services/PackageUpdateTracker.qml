@@ -25,10 +25,16 @@ Item {
   property string finishedTitle: ""
   property string finishedDetail: ""
 
-  readonly property string status: phase === "Downloading" ? (speed > 0 ? formatSpeed(speed) : "Downloading")
-    : phase === "Installing" ? (count > 0 ? count + (count === 1 ? " package" : " packages") : "Installing")
-    : phase === "Building" ? "Building"
+  // `phase` 是内部状态名，只在这里换算成显示文字。
+  readonly property string phaseText: phase === "Syncing" ? "同步中"
+    : phase === "Downloading" ? "下载中"
+    : phase === "Installing" ? "安装中"
+    : phase === "Building" ? "构建中"
+    : phase === "Finishing" ? "收尾中"
     : phase
+  readonly property string status: phase === "Downloading" ? (speed > 0 ? formatSpeed(speed) : phaseText)
+    : phase === "Installing" ? (count > 0 ? count + "个软件包" : phaseText)
+    : phaseText
 
   property real logOffset: 0
   property double startedAt: 0
@@ -163,14 +169,14 @@ Item {
     active = false
     phase = ""
     if (count === 0) return
-    finishedTitle = tool === "omarchy" ? "Omarchy Updated"
-      : upgrade ? "System Updated"
-      : removedCount === count ? (count === 1 ? "Package Removed" : "Packages Removed")
-      : removedCount === 0 ? (count === 1 ? "Package Installed" : "Packages Installed")
-      : "Packages Changed"
+    finishedTitle = tool === "omarchy" ? "Omarchy 已更新"
+      : upgrade ? "系统已更新"
+      : removedCount === count ? "已移除软件包"
+      : removedCount === 0 ? "已安装软件包"
+      : "软件包已变更"
     var minutes = Math.round((Date.now() - startedAt) / 60000)
-    finishedDetail = count + (count === 1 ? " package" : " packages")
-      + (minutes >= 1 ? " · " + minutes + " min" : "")
+    finishedDetail = count + "个软件包"
+      + (minutes >= 1 ? " · " + minutes + "分钟" : "")
     finishedTimer.restart()
   }
 

@@ -20,7 +20,7 @@ ColumnLayout {
     Layout.leftMargin: 8
     Layout.rightMargin: 2
     Text {
-      text: "Notifications"
+      text: "通知"
       color: history.center.text
       font.family: history.center.host.theme.textFontFamily
       font.pixelSize: history.center.host.theme.px(15)
@@ -38,7 +38,7 @@ ColumnLayout {
       Text {
         id: clearLabel
         anchors.centerIn: parent
-        text: "Clear All"
+        text: "全部清除"
         color: history.center.text
         font.family: history.center.host.theme.textFontFamily
         font.pixelSize: history.center.host.theme.px(12)
@@ -60,7 +60,7 @@ ColumnLayout {
     Layout.topMargin: 10
     Layout.bottomMargin: 12
     horizontalAlignment: Text.AlignHCenter
-    text: "No Notifications"
+    text: "暂无通知"
     color: history.center.textMuted
     font.family: history.center.host.theme.textFontFamily
     font.pixelSize: history.center.host.theme.px(13)
@@ -76,6 +76,39 @@ ColumnLayout {
     spacing: 2
     boundsBehavior: Flickable.StopAtBounds
     model: history.center.host.notifications.history
+    // Notification choreography: one arrives, it slides in and the rest make
+    // room; one is dismissed, it fades and collapses instead of teleporting.
+    // Transforms and opacity only, so nothing here re-lays the panel out.
+    add: Transition {
+      ParallelAnimation {
+        MotionAnimation {
+          theme: history.center.host.theme
+          property: "opacity"; from: 0; to: 1
+          pace: "standard"
+        }
+        MotionAnimation {
+          theme: history.center.host.theme
+          property: "y"; from: -8; to: 0
+          pace: "standard"; curve: "morph"
+        }
+      }
+    }
+    remove: Transition {
+      ParallelAnimation {
+        MotionAnimation {
+          theme: history.center.host.theme
+          property: "opacity"; to: 0
+          pace: "exit"
+        }
+      }
+    }
+    displaced: Transition {
+      MotionAnimation {
+        theme: history.center.host.theme
+        property: "y"
+        pace: "expressive"; curve: "morph"
+      }
+    }
     // Inset by the × button's overhang, which sits on the banner's corner.
     delegate: Item {
       id: note
@@ -218,7 +251,7 @@ ColumnLayout {
           cursorShape: Qt.PointingHandCursor
           onClicked: history.center.host.notifications.dismiss(note.modelData)
         }
-        Tooltip { theme: history.center.host.theme; text: "Dismiss" }
+        Tooltip { theme: history.center.host.theme; text: "清除" }
       }
     }
   }

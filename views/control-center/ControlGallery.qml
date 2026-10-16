@@ -12,10 +12,10 @@ ColumnLayout {
   readonly property var controls: controlCenter.controls
   readonly property var layout: controlLayout
   readonly property var sections: [
-    { title: "Connectivity", keys: ["wifi", "bluetooth"] },
-    { title: "Focus & System", keys: ["focus", "microphoneMute", "night", "game", "power", "keyboard"] },
-    { title: "Sound & Display", keys: ["sound", "microphone", "display"] },
-    { title: "Addons", keys: gallery.cc.host.addons.tiles.map(function(tile) { return tile.key }) }
+    { title: "网络", keys: ["wifi", "bluetooth"] },
+    { title: "勿扰与系统", keys: ["focus", "microphoneMute", "night", "game", "power", "keyboard"] },
+    { title: "声音与显示", keys: ["sound", "microphone", "display"] },
+    { title: "小组件", keys: gallery.cc.host.addons.tiles.map(function(tile) { return tile.key }) }
   ]
   readonly property bool hasResults: {
     for (var i = 0; i < sections.length; i++)
@@ -34,8 +34,8 @@ ColumnLayout {
   Text {
     Layout.fillWidth: true
     text: gallery.layout.removeDropActive
-      ? "Release to remove this control."
-      : "Drag a control into the layout above. Scroll to see more."
+      ? "松开移除此控件。"
+      : "把控件拖到上方布局里。可滚动查看更多。"
     color: gallery.cc.textMuted
     font.family: gallery.cc.host.theme.textFontFamily
     font.pixelSize: gallery.cc.host.theme.px(12)
@@ -138,7 +138,7 @@ ColumnLayout {
                   onCanceled: gallery.layout.endDrag()
                 }
                 Tooltip { theme: gallery.cc.host.theme;
-                  text: "Drag to Add " + gallery.controls.controlTitle(choice.modelData)
+                  text: "拖入添加 " + gallery.controls.controlTitle(choice.modelData)
                 }
               }
             }
@@ -151,7 +151,7 @@ ColumnLayout {
         Layout.topMargin: 24
         Layout.bottomMargin: 24
         horizontalAlignment: Text.AlignHCenter
-        text: "All controls have been added"
+        text: "控件已全部添加"
         color: gallery.cc.textMuted
         font.family: gallery.cc.host.theme.textFontFamily
         font.pixelSize: gallery.cc.host.theme.px(13)

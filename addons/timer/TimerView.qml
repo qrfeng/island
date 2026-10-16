@@ -1,8 +1,8 @@
 import QtQuick
 import "../../components"
 
-// The timer view. Unset, play and cancel buttons, and after a "Timer"
-// label, as the countdown has, how long it's set to ("15 min", each time it
+// The timer view. Unset, play and cancel buttons, and after a "计时器"
+// label, as the countdown has, how long it's set to ("15分钟", each time it
 // opens), turned a minute at a time like one of iOS's picker wheels:
 // scrolled, dragged up or down, or with ↑/↓, the new length rolling in as on
 // a drum. Play or Enter starts it and folds the island back to its pill;
@@ -122,7 +122,7 @@ Item {
       anchors.right: well.left
       anchors.rightMargin: -2
       y: well.y + (drum.height - current.height) / 2 + current.baselineOffset - baselineOffset
-      text: "Timer"
+      text: "计时器"
       color: view.timer.tint
       font.family: view.host.theme.textFontFamily
       font.pixelSize: Math.round(view.host.theme.px(46) * 0.4)
@@ -159,7 +159,7 @@ Item {
       }
       component Face: Text {
         property real shift: 0
-        // A long length ("23 h 59 min") shrinks to fit between the label
+        // A long length ("23小时59分钟") shrinks to fit between the label
         // and the buttons.
         width: Math.min(implicitWidth, view.width - 2 * 52 - 12 - 16 - timerLabel.implicitWidth - 20)
         fontSizeMode: Text.HorizontalFit

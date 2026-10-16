@@ -10,10 +10,10 @@ Card {
   id: card
   property var temps: []          // [{ label, value, ssd }]
   readonly property var levels: [
-    { label: "Good", color: "#30d158" },
-    { label: "Fair", color: "#248a3d" },
-    { label: "High", color: "#ffd60a" },
-    { label: "Max", color: "#ff453a" }
+    { label: "良好", color: "#30d158" },
+    { label: "一般", color: "#248a3d" },
+    { label: "高", color: "#ffd60a" },
+    { label: "过热", color: "#ff453a" }
   ]
   function levelOf(t) {
     var good = t.ssd ? 50 : 70
@@ -39,7 +39,7 @@ Card {
       }
       Text {
         Layout.fillWidth: true
-        text: "Thermal"
+        text: "温度"
         color: card.view.text
         font.family: "Adwaita Sans"
         font.pixelSize: card.view.detailFontSize + 1

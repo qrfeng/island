@@ -12,8 +12,8 @@ import "../../components"
 Picker {
   id: ws
   cardHeight: 110
-  placeholder: "Search wallpapers…"
-  emptyText: "No wallpapers match"
+  placeholder: "搜索壁纸…"
+  emptyText: "无匹配壁纸"
   currentKey: currentPath
   applyCommand: function(entry) { return ["omarchy-theme-bg-set", entry.path] }
   onApplied: linkReader.running = true

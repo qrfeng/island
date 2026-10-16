@@ -13,8 +13,8 @@ import "file:///usr/share/omarchy/shell/plugins/menu/MenuModel.js" as MenuModel
 // everything under it, showing where each result lives.
 ListPicker {
   id: menu
-  placeholder: activeMenu === "root" ? "Search" : MenuModel.pathFor(items_, activeMenu)
-  emptyText: "Nothing matches"
+  placeholder: activeMenu === "root" ? "搜索" : MenuModel.pathFor(items_, activeMenu)
+  emptyText: "无匹配项"
   rowHeight: 46
   visibleRows: 9
   items: rows
@@ -30,7 +30,17 @@ ListPicker {
     var route = MenuModel.resolveRoute(items_, itemOrder, host.menuRoute || "root")
     activeMenu = MenuModel.item(items_, route) ? route : "root"
     navStack = []
-    evaluateGuards()
+    // The guard batch runs every item's `when`/`checked`/`disabled` test in one
+    // bash script, which is the bulk of what opening this menu costs. The last
+    // results are already on screen and the two jsonc files reload themselves on
+    // change, so this is a refresh and not a prerequisite: let the panel finish
+    // revealing before paying for it.
+    guardTimer.restart()
+  }
+  Timer {
+    id: guardTimer
+    interval: 260
+    onTriggered: menu.evaluateGuards()
   }
 
   readonly property string omarchyPath: Quickshell.env("OMARCHY_PATH") || "/usr/share/omarchy"

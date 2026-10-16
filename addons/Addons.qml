@@ -17,27 +17,27 @@ Item {
   // placeholder }). Its views' keybindings are tagged with its id in
   // companion/bindings.sh.
   readonly property var entries: [
-    { id: "weather", name: "Weather", icon: "󰖐", color: "#1f8ef1", default: false, source: "weather/WeatherAddon.qml",
+    { id: "weather", name: "天气", icon: "󰖐", color: "#1f8ef1", default: false, source: "weather/WeatherAddon.qml",
       iconLayers: [
         { circle: true, color: "#ffd60a", x: 0.65, y: 0.37, size: 0.36 },
         { glyph: "󰅟", color: "#ffffff", opacity: 0.9, x: 0.45, y: 0.57, size: 0.74 }
       ],
-      description: "Current conditions for your city",
+      description: "你所在城市的实时天气",
       options: [
-        { key: "city", label: "City", detail: "Looked up on Open-Meteo", type: "text", default: "", placeholder: "e.g. Lisbon" },
-        { key: "fahrenheit", label: "Fahrenheit", detail: "Show °F instead of °C", type: "switch", default: false }
+        { key: "city", label: "城市", detail: "通过 Open-Meteo 查询", type: "text", default: "", placeholder: "例如：上海" },
+        { key: "fahrenheit", label: "华氏度", detail: "以 °F 代替 °C", type: "switch", default: false }
       ] },
-    { id: "calendar", name: "Calendar", icon: "󰃭", color: "#f7f7f7", default: false, source: "calendar/CalendarAddon.qml",
+    { id: "calendar", name: "日历", icon: "󰃭", color: "#f7f7f7", default: false, source: "calendar/CalendarAddon.qml",
       iconLayers: [
         { rect: true, color: "#f2564f", x: 0.5, y: 0.13, width: 1, height: 0.36 },
         { date: "month", color: "#ffffff", weight: Font.Bold, x: 0.5, y: 0.17, size: 0.2 },
         { date: "day", color: "#2c2c2e", weight: Font.Light, x: 0.5, y: 0.63, size: 0.56 }
       ],
-      description: "Your month and the day's events",
+      description: "本月日历与当日日程",
       options: [
-        { key: "urls", label: "Calendars", detail: "ICS links, separated by spaces", type: "text", default: "", placeholder: "https://…/basic.ics" }
+        { key: "urls", label: "订阅日历", detail: "ICS 链接，用空格分隔", type: "text", default: "", placeholder: "https://…/basic.ics" }
       ] },
-    { id: "timer", name: "Timer", icon: "󰔛", color: "#1c1c1e", default: false, source: "timer/TimerAddon.qml",
+    { id: "timer", name: "计时器", icon: "󰔛", color: "#1c1c1e", default: false, source: "timer/TimerAddon.qml",
       iconLayers: [
         { rect: true, color: "#ff9f0a", x: 0.5, y: 0.13, width: 0.2, height: 0.08, radius: 0.5 },
         { circle: true, color: "#ff9f0a", x: 0.5, y: 0.56, size: 0.68 },
@@ -45,8 +45,8 @@ Item {
         { rect: true, color: "#ffffff", x: 0.5, y: 0.47, width: 0.07, height: 0.2, radius: 0.5 },
         { circle: true, color: "#ffffff", x: 0.5, y: 0.56, size: 0.1 }
       ],
-      description: "A countdown on the island" },
-    { id: "stats", name: "System Stats", icon: "󰓅", color: "#232325", default: true, source: "stats/StatsAddon.qml",
+      description: "在胶囊上显示倒计时" },
+    { id: "stats", name: "资源监控", icon: "󰓅", color: "#232325", default: true, source: "stats/StatsAddon.qml",
       // Activity Monitor's: a red and a blue wave either side of a line,
       // over a faint grid.
       iconLayers: [1, 2, 3, 4, 5, 6, 7].reduce(function(grid, n) {
@@ -60,8 +60,8 @@ Item {
         { rect: true, color: "#ff6b5e", x: 0.5, y: 0.492, width: 1, height: 0.03 },
         { rect: true, color: "#3d8bff", x: 0.5, y: 0.518, width: 1, height: 0.025 }
       ]),
-      description: "Live CPU, memory, GPU, and disk use" },
-    { id: "tray", name: "System Tray", icon: "󰀻", color: "#5e5ce6", default: false, source: "tray/TrayAddon.qml",
+      description: "CPU、内存、GPU、磁盘实时用量" },
+    { id: "tray", name: "系统托盘", icon: "󰀻", color: "#5e5ce6", default: false, source: "tray/TrayAddon.qml",
       iconLayers: [
         { rect: true, color: "#ffffff", opacity: 0.95, x: 0.5, y: 0.26, width: 0.8, height: 0.14, radius: 0.5 },
         { circle: true, color: "#34c759", x: 0.56, y: 0.26, size: 0.07 },
@@ -73,8 +73,8 @@ Item {
         { rect: true, color: "#ffffff", x: 0.66, y: 0.61, width: 0.34, height: 0.05, radius: 0.5 },
         { rect: true, color: "#c7c7cc", x: 0.66, y: 0.75, width: 0.34, height: 0.05, radius: 0.5 }
       ],
-      description: "Apps tray icons and menus" },
-    { id: "plugins", name: "Plugins", icon: "󰐱", color: "#ff9f0a", default: false, source: "plugins/PluginsAddon.qml",
+      description: "应用托盘图标与菜单" },
+    { id: "plugins", name: "插件", icon: "󰐱", color: "#ff9f0a", default: false, source: "plugins/PluginsAddon.qml",
       iconLayers: [
         { rect: true, color: "#ffffff", x: 0.33, y: 0.33, width: 0.3, height: 0.3, radius: 0.28 },
         { rect: true, color: "#ffffff", x: 0.67, y: 0.33, width: 0.3, height: 0.3, radius: 0.28 },
@@ -82,8 +82,8 @@ Item {
         { rect: true, color: "#ffffff", opacity: 0.4, x: 0.67, y: 0.67, width: 0.3, height: 0.3, radius: 0.28 },
         { glyph: "󰐕", color: "#ffffff", x: 0.67, y: 0.67, size: 0.28 }
       ],
-      description: "Open and switch Omarchy plugins" },
-    { id: "keyboard", name: "Keyboard Layout", icon: "󰌌", color: "#30b0c7", default: false, source: "keyboard/KeyboardAddon.qml",
+      description: "打开与切换 Omarchy 插件" },
+    { id: "keyboard", name: "键盘布局", icon: "󰌌", color: "#30b0c7", default: false, source: "keyboard/KeyboardAddon.qml",
       iconLayers: [{ rect: true, color: "#ffffff", x: 0.5, y: 0.55, width: 0.8, height: 0.5, radius: 0.16 }]
         .concat([0.41, 0.55].reduce(function(keys, y) {
           return keys.concat([0.23, 0.365, 0.5, 0.635, 0.77].map(function(x) {
@@ -91,8 +91,18 @@ Item {
           }))
         }, []))
         .concat([{ rect: true, color: "#a9bcc2", x: 0.5, y: 0.69, width: 0.5, height: 0.09, radius: 0.4 }]),
-      description: "Show the layout on the pill when it changes" },
-    { id: "ask", name: "Ask AI", icon: "󰚩", color: "#000000", default: true, source: "ask/AskAddon.qml",
+      description: "切换布局时在胶囊上提示" },
+    { id: "calculator", name: "计算器", icon: "=", color: "#ff9f0a", default: true,
+      source: "calculator/CalculatorAddon.qml",
+      // The macOS calculator: a dark key with its screen, and the equals bar.
+      iconLayers: [
+        { rect: true, color: "#1c1c1e", x: 0.5, y: 0.5, width: 0.94, height: 0.94, radius: 0.26 },
+        { rect: true, color: "#ffffff", opacity: 0.85, x: 0.5, y: 0.3, width: 0.62, height: 0.15, radius: 0.3 },
+        { rect: true, color: "#ff9f0a", x: 0.5, y: 0.6, width: 0.44, height: 0.085, radius: 0.4 },
+        { rect: true, color: "#ff9f0a", x: 0.5, y: 0.75, width: 0.44, height: 0.085, radius: 0.4 }
+      ],
+      description: "启动器里输算式，回车复制结果" },
+    { id: "ask", name: "问 AI", icon: "󰚩", color: "#000000", default: true, source: "ask/AskAddon.qml",
       // Siri's: a glass sphere on black, with a ribbon of light across it,
       // white in the middle and tinted orange and blue at its edges.
       iconLayers: [
@@ -106,22 +116,24 @@ Item {
         siriWave(0.24, 0.76, 0, "#ffffff", 0.55, 0.045),
         siriWave(0.34, 0.66, 0, "#ffffff", 0.95, 0.03)
       ],
-      description: "Answers launcher questions in the island, through Pi",
+      description: "启动器的问题由 Pi 在 island 内回答",
       options: [
-        { key: "web", label: "Search the web", detail: "Answers can look things up online: slower, and only searching and reading pages", type: "switch", default: true }
+        { key: "web", label: "联网搜索", detail: "可联网查证：更慢，只搜索和阅读网页", type: "switch", default: true }
       ] },
-    { id: "agents", name: "Agent usage", icon: "\uf201", color: "#30d158", default: true,
+    { id: "agents", name: "Agent", icon: "\uf201", color: "#30d158", default: true,
       source: "agents/AgentsAddon.qml",
-      description: "Tokens the coding agents have spent",
+      description: "编程 agent 的会话看板与已用 tokens（herdr 在跑时看板才有内容）",
       options: [
-        { key: "refresh", label: "Refresh", detail: "How often to read the figures again while the view is open",
-          type: "popup", default: "15 minutes", choices: ["5 minutes", "15 minutes", "30 minutes", "1 hour"] },
-        { key: "rate", label: "Dollar to yuan", detail: "Rates the endpoints' dollar figures into yuan",
-          type: "text", default: "6.69", placeholder: "e.g. 6.69" },
-        { key: "others", label: "Show Claude, Codex, and Fireworks", detail: "Also list those tools and ask them for their rate limits over the network",
+        { key: "refresh", label: "刷新", detail: "视图打开时重新读取数据的频率",
+          type: "popup", default: "15 minutes", choices: [
+            { label: "5分钟", value: "5 minutes" }, { label: "15分钟", value: "15 minutes" },
+            { label: "30分钟", value: "30 minutes" }, { label: "1小时", value: "1 hour" }] },
+        { key: "rate", label: "美元兑人民币", detail: "把接口的美元金额折算成人民币",
+          type: "text", default: "6.69", placeholder: "例如：6.69" },
+        { key: "others", label: "显示 Codex 和 Fireworks", detail: "也列出这两个工具并联网查询限额；Pi 和 Claude Code 始终读各自会话",
           type: "switch", default: false }
       ] },
-    { id: "todos", name: "Task list", icon: "󰝖", color: "#34c759", default: true,
+    { id: "todos", name: "待办", icon: "󰝖", color: "#34c759", default: true,
       source: "todos/TodosAddon.qml",
       // Apple Reminders' tile: a dark card, one green tick, and the list under
       // it fading away as it goes down.
@@ -134,12 +146,38 @@ Item {
         { glyph: "󰄰", color: "#8e8e93", x: 0.26, y: 0.73, size: 0.26 },
         { rect: true, color: "#ffffff", opacity: 0.3, x: 0.66, y: 0.73, width: 0.4, height: 0.075, radius: 0.5 }
       ],
-      description: "A todo.txt file, checked off on the island",
+      description: "todo.txt 文件，在 island 内勾选",
       options: [
-        { key: "path", label: "File", detail: "Plain todo.txt, editable anywhere",
+        { key: "path", label: "文件", detail: "纯文本 todo.txt，任何编辑器都能改",
           type: "text", default: "~/.local/share/todos/todo.txt", placeholder: "~/.local/share/todos/todo.txt" },
-        { key: "done", label: "Finished tasks", detail: "How far back to keep listing them",
-          type: "popup", default: "Last 7 days", choices: ["Hide", "Last 3 days", "Last 7 days", "Last 30 days", "Always"] }
+        { key: "done", label: "已完成任务", detail: "继续列出多久以内的完成项",
+          type: "popup", default: "Last 7 days", choices: [
+            { label: "不显示", value: "Hide" }, { label: "最近3天", value: "Last 3 days" },
+            { label: "最近7天", value: "Last 7 days" }, { label: "最近30天", value: "Last 30 days" },
+            { label: "一直显示", value: "Always" }] },
+        { key: "group", label: "按项目分组", detail: "未完成项按 +project 归类（列表内按 g 切换）",
+          type: "popup", default: "By project", choices: [{ label: "关闭", value: "Off" }, { label: "按项目", value: "By project" }] },
+        { key: "archive", label: "归档已完成任务", detail: "完成项超过这个天数就移到同目录 done.txt",
+          type: "popup", default: "After 30 days", choices: [
+            { label: "关闭", value: "Off" }, { label: "7天后", value: "After 7 days" },
+            { label: "30天后", value: "After 30 days" }, { label: "90天后", value: "After 90 days" }] }
+      ] },
+    { id: "inputmethod", name: "输入法", icon: "󰍛", color: "#5ac8fa", default: true,
+      source: "inputmethod/InputMethodAddon.qml",
+      // The key the user is actually pressing: a keycap, and the letter on it.
+      iconLayers: [
+        { rect: true, color: "#1c1c1e", x: 0.5, y: 0.5, width: 0.94, height: 0.94, radius: 0.26 },
+        { glyph: "󰌌", color: "#5ac8fa", x: 0.34, y: 0.64, size: 0.44 },
+        { glyph: "A", color: "#ffffff", x: 0.68, y: 0.36, size: 0.32 }
+      ],
+      description: "fcitx5 的中英文：控制中心一键切换，要的话切换时提示",
+      options: [
+        { key: "labels", label: "输入法名称", detail: "把 fcitx5 的内部名改成你看得懂的词，逗号分隔",
+          type: "text", default: "", placeholder: "例如：rime=雾凇拼音,keyboard-us=英文" },
+        // 胶囊只能长在岛顶部（layer panel 跟不到光标，也到不了另一块屏），而他按快捷键切的是
+        // 会话：位置对不上就变成误导，所以默认不弹，状态看控制中心那块磁贴。
+        { key: "popup", label: "切换时弹提示", detail: "胶囊只出现在岛顶部，不在你正在打字的会话旁边；关掉后看「输入法」磁贴",
+          type: "switch", default: false }
       ] }
   ]
 

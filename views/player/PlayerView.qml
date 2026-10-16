@@ -102,7 +102,7 @@ Item {
         spacing: 2
         Text {
           Layout.fillWidth: true
-          text: player.mpris ? String(player.mpris.trackTitle || "Unknown track") : "Nothing playing"
+          text: player.mpris ? String(player.mpris.trackTitle || "未知曲目") : "未在播放"
           textFormat: Text.PlainText
           elide: Text.ElideRight
           color: "#ffffff"
@@ -219,7 +219,7 @@ Item {
         Control {
           anchors.verticalCenter: parent.verticalCenter
           text: "󰑟"
-          name: "Previous"
+          name: "上一首"
           font.pixelSize: player.host.theme.px(34)
           available: !!(player.mpris && player.mpris.canGoPrevious)
           onActivated: player.action("previous")
@@ -227,7 +227,7 @@ Item {
         Control {
           anchors.verticalCenter: parent.verticalCenter
           text: player.playing ? "󰏤" : "󰐊"
-          name: player.playing ? "Pause" : "Play"
+          name: player.playing ? "暂停" : "播放"
           font.pixelSize: player.host.theme.px(42)
           available: !!player.mpris
           onActivated: player.action("playPause")
@@ -235,7 +235,7 @@ Item {
         Control {
           anchors.verticalCenter: parent.verticalCenter
           text: "󰈑"
-          name: "Next"
+          name: "下一首"
           font.pixelSize: player.host.theme.px(34)
           available: !!(player.mpris && player.mpris.canGoNext)
           onActivated: player.action("next")

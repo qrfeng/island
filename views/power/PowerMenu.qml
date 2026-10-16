@@ -24,16 +24,18 @@ Item {
   property bool suspendAvailable: true
   property bool hibernateAvailable: false
   readonly property var actions: {
-    var list = [{ label: "Power Off", icon: "󰐥", command: ["omarchy-system-shutdown"] }]
-    list.push({ label: "Reboot", icon: "󰜉", command: ["omarchy-system-reboot"] })
-    list.push({ label: "Lock", icon: "", command: ["omarchy-system-lock"] })
-    if (hibernateAvailable) list.push({ label: "Hibernate", icon: "󰤁", command: ["systemctl", "hibernate"] })
-    if (suspendAvailable) list.push({ label: "Suspend", icon: "󰖔", command: ["systemctl", "suspend"] })
+    // `key` is what the code matches on; `label` is display text, so the
+    // wording can change without breaking `lockIndex`.
+    var list = [{ key: "off", label: "关机", icon: "󰐥", command: ["omarchy-system-shutdown"] }]
+    list.push({ key: "reboot", label: "重启", icon: "󰜉", command: ["omarchy-system-reboot"] })
+    list.push({ key: "lock", label: "锁定", icon: "", command: ["omarchy-system-lock"] })
+    if (hibernateAvailable) list.push({ key: "hibernate", label: "休眠", icon: "󰤁", command: ["systemctl", "hibernate"] })
+    if (suspendAvailable) list.push({ key: "suspend", label: "睡眠", icon: "󰖔", command: ["systemctl", "suspend"] })
     return list
   }
   property int currentIndex: 0
   readonly property int lockIndex: {
-    for (var i = 0; i < actions.length; i++) if (actions[i].label === "Lock") return i
+    for (var i = 0; i < actions.length; i++) if (actions[i].key === "lock") return i
     return 0
   }
 

@@ -7,7 +7,7 @@ import ".."
 Addon {
   id: pluginsAddon
   views: [{ name: "plugins", width: 520, component: pluginList }]
-  tiles: [{ key: "open", title: "Plugins", component: pluginsTile }]
+  tiles: [{ key: "open", title: "插件", component: pluginsTile }]
   Component {
     id: pluginList
     PluginList { host: pluginsAddon.host; active: pluginsAddon.host.view === "plugins" }

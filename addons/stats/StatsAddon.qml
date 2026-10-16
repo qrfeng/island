@@ -10,10 +10,10 @@ import ".."
 Addon {
   id: stats
   settingsPages: [{
-    title: "System Stats",
+    title: "资源监控",
     source: Qt.resolvedUrl("StatsPage.qml"), properties: { stats: stats },
-    about: "Live CPU, memory, GPU, and disk use.",
-    search: "system stats activity monitor cpu processor load memory ram pressure swap gpu graphics vram disk storage processes quit force kill"
+    about: "CPU、内存、GPU、磁盘实时用量",
+    search: "system stats activity monitor cpu processor load memory ram pressure swap gpu graphics vram disk storage processes quit force kill 系统资源 活动监视器 性能 监控 内存 磁盘 存储 温度 进程 退出 强制退出 负载 交换区"
   }]
 
   readonly property bool sampling: host.view === "settings"

@@ -25,7 +25,15 @@ Item {
   // value at 1.0 and passed through px().
   readonly property real textScale: settings.textScale > 0 ? settings.textScale : 1
   function px(size) { return Math.max(1, Math.round(size * textScale)) }
-  readonly property color background: "#000000"
+  // Glass shell, driven by Settings → General → Appearance (or `glassOpacity`
+  // in ~/.config/omarchy/island.json). Below 1 the shell lets the compositor
+  // show what is behind it and the "island-glass" layer rule in
+  // ~/.config/hypr/looknfeel.lua blurs that backdrop, so the island reads as
+  // frosted instead of solid black. 1 = upstream solid black and needs no blur;
+  // 0 shows the raw desktop unblurred, which is the sharpest way to see that
+  // the rule is working. Needs decoration:blur:enabled = true (same file).
+  readonly property real backgroundAlpha: Math.max(0, Math.min(1, settings.glassOpacity))
+  readonly property color background: Qt.rgba(0, 0, 0, backgroundAlpha)
   readonly property bool textIsLight: luminance(Color.foreground) > 0.5
   readonly property color text: textIsLight ? Color.foreground : Color.background
   readonly property color muted: textIsLight ? Color.muted : withAlpha(text, 0.6)
@@ -33,15 +41,19 @@ Item {
   readonly property color accentText: contrastOn(Color.accent)
   readonly property color urgent: Color.urgent
   readonly property color surface: Qt.tint(background, withAlpha(text, 0.07))
-  readonly property real motionScale: settings.motionScale > 0 ? settings.motionScale : 1.5
+  // 0 is a real speed here: the settings page offers "off", so only a
+  // negative (unset) value falls back to the default cadence.
+  readonly property real motionScale: settings.motionScale >= 0 ? settings.motionScale : 1.5
   // Motion roles share one cadence at every user-selected speed. Curves end
   // with a soft landing; geometry stays inside its bounds without bouncing.
+  // The table is tuned so the default speed (1.5) reads as snappy: the panel
+  // morph is ~210ms and its content is on screen ~180ms after the open starts.
   readonly property var motionDurations: ({
-    press: 65, quick: 110, standard: 170, expressive: 220,
-    morph: 240, collapse: 190, fade: 110, exit: 90
+    press: 45, quick: 80, standard: 95, expressive: 130,
+    morph: 140, collapse: 110, fade: 65, exit: 60
   })
   readonly property int feedbackFadeDuration: motionDuration("fade")
-  readonly property int contentRevealDelay: Math.round(45 * motionScale)
+  readonly property int contentRevealDelay: Math.round(27 * motionScale)
   function motionDuration(pace) {
     return Math.round((motionDurations[pace] || motionDurations.standard) * motionScale)
   }

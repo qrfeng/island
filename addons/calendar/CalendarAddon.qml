@@ -11,7 +11,7 @@ import ".."
 Addon {
   id: calendarAddon
   views: [{ name: "calendar", width: 480, padding: 22, component: calendarView }]
-  tiles: [{ key: "today", title: "Calendar", component: calendarTile }]
+  tiles: [{ key: "today", title: "日历", component: calendarTile }]
   pill: Component { CalendarPill { calendar: calendarAddon } }
   pillWidth: 340
   pillHeight: host.settings.notch ? 52 : 56
@@ -106,10 +106,10 @@ Addon {
     var d = new Date(ms)
     var h = d.getHours(), m = (d.getMinutes() < 10 ? "0" : "") + d.getMinutes()
     if (host.settings.clock24h) return (h < 10 ? "0" : "") + h + ":" + m
-    return ((h + 11) % 12 + 1) + ":" + m + (h < 12 ? " AM" : " PM")
+    return (h < 12 ? "上午" : "下午") + ((h + 11) % 12 + 1) + ":" + m
   }
   function spanText(event) {
-    if (event.allDay) return "All day"
+    if (event.allDay) return "全天"
     if (event.end <= event.start) return timeText(event.start)
     return timeText(event.start) + " – " + timeText(event.end)
   }
@@ -265,7 +265,7 @@ Addon {
       end = { ms: start.allDay ? new Date(s.getFullYear(), s.getMonth(), s.getDate() + 1).getTime() : start.ms }
     }
     return {
-      title: plainText((event.SUMMARY || { value: "" }).value) || "Untitled",
+      title: plainText((event.SUMMARY || { value: "" }).value) || "无标题",
       start: start.ms,
       end: Math.max(end.ms, start.ms),
       allDay: start.allDay,

@@ -12,15 +12,15 @@ ColumnLayout {
 
   SettingsGroup {
     view: page.view
-    title: "Banners"
+    title: "横幅"
     SettingsRow {
       view: page.view
-      label: "Banner Duration"
-      detail: "How long a notification stays on the pill"
+      label: "横幅时长"
+      detail: "通知在胶囊上停留多久"
       last: true
       SettingsPopUp {
         view: page.view
-        options: [{ label: "3 seconds", value: 3 }, { label: "5 seconds", value: 5 }, { label: "8 seconds", value: 8 }]
+        options: [{ label: "3秒", value: 3 }, { label: "5秒", value: 5 }, { label: "8秒", value: 8 }]
         value: page.view.settings.bannerSeconds
         onPicked: function(v) { page.view.settings.bannerSeconds = v }
       }

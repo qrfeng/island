@@ -23,9 +23,9 @@ Item {
   implicitHeight: 30 + rowHeight * 12
 
   readonly property var columns: [
-    { key: "name", title: "Process Name", width: 0 },
+    { key: "name", title: "进程名称", width: 0 },
     { key: "cpu", title: "% CPU", width: 54 },
-    { key: "mem", title: "Memory", width: 84 }
+    { key: "mem", title: "内存", width: 84 }
   ]
   readonly property int fixedWidth: columns.reduce(function(sum, c) { return sum + c.width }, 0)
   readonly property int myUid: stats.latest ? stats.latest.uid : -1
@@ -334,7 +334,7 @@ Item {
                   table.quitRequested(row.modelData)
                 }
               }
-              Tooltip { theme: table.view.host.theme; text: "Quit Process" }
+              Tooltip { theme: table.view.host.theme; text: "退出进程" }
             }
             Text {
               visible: !cellItem.isName
@@ -356,7 +356,7 @@ Item {
   Text {
     anchors.centerIn: list
     visible: table.rows.length === 0
-    text: table.stats.latest ? "No Processes" : "Loading…"
+    text: table.stats.latest ? "暂无进程" : "加载中…"
     color: table.view.textMuted
     font.family: "Adwaita Sans"
     font.pixelSize: table.view.host.theme.px(13)

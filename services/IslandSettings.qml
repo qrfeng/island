@@ -30,6 +30,13 @@ Item {
       property bool brightnessHud: true
       property int bannerSeconds: 5
       property bool notch: false
+      // Glass shell. 1 = the upstream solid black; lower lets the desktop behind
+      // the island show through, blurred by the "island-glass" layer rule
+      // (~/.config/hypr/looknfeel.lua). Settings → General → Appearance.
+      property real glassOpacity: 1
+      // GitHub update check and its one-click update. Off pins the plugin to
+      // what is in the folder; update by hand with `omarchy plugin update`.
+      property bool autoUpdate: true
       property bool downloads: true
       property bool clipboard: true
       property bool systemUpdates: true

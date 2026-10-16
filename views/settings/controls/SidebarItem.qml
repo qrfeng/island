@@ -34,7 +34,7 @@ Rectangle {
     }
     Text {
       Layout.fillWidth: true
-      text: side.title
+      text: side.view.pageLabel(side.title)
       elide: Text.ElideRight
       color: side.selected ? side.view.accentInk : side.view.text
       font.family: side.view.host.theme.textFontFamily

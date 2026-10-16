@@ -7,10 +7,8 @@ CcTile {
   required property var plugins
 
   anchors.fill: parent
-  // The tile's title stays English like the others; its count is the island's
-  // own mix of Chinese.
   icon: "󰐱"
-  title: "Plugins"
+  title: "插件"
   subtitle: plugins.total < 0 ? ""
     : plugins.total === 0 ? "还没有添加插件"
     : plugins.enabled + "/" + plugins.total + " 已启用"

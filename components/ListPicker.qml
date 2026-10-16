@@ -23,8 +23,12 @@ Item {
   // Lets a view show the pane only for some items (e.g. just images).
   property bool sideVisible: true
   readonly property bool showSide: !!side && sideVisible
-  property string placeholder: "Search"
-  property string emptyText: "Nothing matches"
+  property string placeholder: "搜索"
+  // One dim line in the search row's right edge, for the keys this view also
+  // answers (Delete, Shift+Enter, ...). Empty by default, so every other
+  // picker looks exactly as it did.
+  property string hint: ""
+  property string emptyText: "无匹配结果"
   property int rowHeight: 50
   // The list fits its contents, from `minRows` up to `visibleRows` rows, so
   // the island morphs as you type or change menus instead of leaving space.
@@ -41,6 +45,18 @@ Item {
   // pick right now; a view that lists a whole read-only layer (the keybinding
   // list's terminal layers) raises it so those rows stay readable.
   property real disabledOpacity: 0.4
+  // Optional group tabs above the list: `tabs` is a list of {label, count} and
+  // `tabChosen` reports the clicked one (or Ctrl+Tab / Ctrl+Shift+Tab). The view
+  // owns what a tab means; this widget only draws and cycles it. A view that
+  // leaves `tabs` empty is laid out exactly as before - the strip has no height.
+  property var tabs: []
+  property int tabIndex: 0
+  readonly property bool tabsShown: (tabs ? tabs.length : 0) > 1
+  signal tabChosen(int index)
+  function cycleTab(delta) {
+    if (!tabsShown) return
+    tabChosen((tabIndex + delta + tabs.length) % tabs.length)
+  }
   readonly property string query: search.text
   readonly property var selected: items[list.currentIndex] || null
   signal chosen(var entry)
@@ -48,7 +64,7 @@ Item {
   // (e.g. Delete to remove an entry, Shift+Enter for a second action).
   signal keyFilter(var event)
 
-  implicitHeight: search.height + 10 + 1 + 8 + list.height
+  implicitHeight: search.height + (tabsShown ? 8 : 0) + tabsStrip.height + 10 + 1 + 8 + list.height
 
   onActiveChanged: {
     if (!active) return
@@ -109,6 +125,8 @@ Item {
         picker.move(picker.columns); event.accepted = true
       } else if (event.key === Qt.Key_Up) {
         picker.move(-picker.columns); event.accepted = true
+      } else if (event.key === Qt.Key_Tab && (event.modifiers & Qt.ControlModifier)) {
+        picker.cycleTab(event.modifiers & Qt.ShiftModifier ? -1 : 1); event.accepted = true
       } else if (event.key === Qt.Key_Tab && !(event.modifiers & Qt.ShiftModifier)) {
         picker.move(1); event.accepted = true
       } else if (event.key === Qt.Key_Backtab) {
@@ -126,11 +144,80 @@ Item {
     }
   }
 
+  // Inside the field, not beside it, so it draws over the input rather than
+  // under it: the keys this list answers besides the obvious one. It hides
+  // itself the moment he starts typing, so it never fights a long query.
+  Text {
+    visible: picker.hint !== "" && picker.query === ""
+    text: picker.hint
+    anchors.right: search.right
+    anchors.rightMargin: search.inset + 12
+    anchors.verticalCenter: search.verticalCenter
+    font.family: picker.host.theme.textFontFamily
+    font.pixelSize: 12
+    color: Qt.rgba(1, 1, 1, 0.34)
+  }
+
+  Item {
+    id: tabsStrip
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.top: search.bottom
+    anchors.topMargin: picker.tabsShown ? 8 : 0
+    height: picker.tabsShown ? tabsFlow.implicitHeight : 0
+    visible: picker.tabsShown
+
+    Flow {
+      id: tabsFlow
+      anchors.left: parent.left
+      anchors.right: parent.right
+      anchors.top: parent.top
+      spacing: 6
+
+      Repeater {
+        model: picker.tabs
+        delegate: Rectangle {
+          id: tabChip
+          required property var modelData
+          required property int index
+          readonly property bool on: picker.tabIndex === tabChip.index
+          width: tabLabel.implicitWidth + 18
+          height: 24
+          radius: 12
+          color: tabChip.on
+            ? picker.host.theme.withAlpha(picker.host.theme.accent, 0.2)
+            : picker.host.theme.withAlpha(picker.host.theme.text, 0.05)
+          border.width: 1
+          border.color: tabChip.on
+            ? picker.host.theme.withAlpha(picker.host.theme.accent, 0.55)
+            : picker.host.theme.withAlpha(picker.host.theme.text, 0.1)
+
+          Text {
+            id: tabLabel
+            anchors.centerIn: parent
+            text: String(tabChip.modelData.label) + " " + tabChip.modelData.count
+            textFormat: Text.PlainText
+            color: tabChip.on ? picker.host.theme.text : picker.host.theme.muted
+            font.family: picker.host.theme.textFontFamily
+            font.pixelSize: picker.host.theme.px(12)
+            font.weight: tabChip.on ? Font.DemiBold : Font.Normal
+          }
+
+          MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            onClicked: picker.tabChosen(tabChip.index)
+          }
+        }
+      }
+    }
+  }
+
   Rectangle {
     id: divider
     anchors.left: parent.left
     anchors.right: parent.right
-    anchors.top: search.bottom
+    anchors.top: tabsStrip.bottom
     anchors.topMargin: 10
     height: 1
     color: picker.host.theme.withAlpha(picker.host.theme.text, 0.1)

@@ -57,16 +57,16 @@ Item {
     return name ? brands[name] : null
   }
   function title(row) {
-    if (!row) return "Notification"
+    if (!row) return "通知"
     if (agent(row) === "codex") return "Codex"
-    return String(row.summary || row.app || "Notification")
+    return String(row.summary || row.app || "通知")
   }
   function age(timestamp) {
     var ms = Date.now() - Number(timestamp || 0)
-    if (!timestamp || ms < 60000) return "now"
-    if (ms < 3600000) return Math.floor(ms / 60000) + "m ago"
-    if (ms < 86400000) return Math.floor(ms / 3600000) + "h ago"
-    return Qt.formatDateTime(new Date(Number(timestamp)), "d MMM")
+    if (!timestamp || ms < 60000) return "刚刚"
+    if (ms < 3600000) return Math.floor(ms / 60000) + "分钟前"
+    if (ms < 86400000) return Math.floor(ms / 3600000) + "小时前"
+    return Qt.formatDateTime(new Date(Number(timestamp)), "M月d日")
   }
 
   FileView {
@@ -128,6 +128,14 @@ Item {
   }
   // Runs one of the companion's per-notification methods (dismissKey,
   // invokeKey) on `row`.
+  //
+  // This one stays a CLI call on purpose. The only service handle a bar plugin
+  // is handed is the shell's narrow proxy (shell.qml pluginFirstPartyServiceFor)
+  // and it forwards exactly setDoNotDisturb / setNightlight / setIdleEnabled /
+  // runAction / playerKey / selectPlayer — the per-notification methods live on
+  // the companion's IpcHandler, and a replacement bar may not reach another
+  // plugin's live service object at all. DND does go in-process (Controls.qml),
+  // and resolves to the companion because it declares omarchy.clonedFrom.
   function command(method, row) {
     proc.command = ["omarchy-shell", "notifications", method, key(row)]
     proc.running = true

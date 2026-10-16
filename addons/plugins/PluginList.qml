@@ -3,20 +3,23 @@ import Quickshell
 import Quickshell.Io
 import "../../components"
 
-// Plugins added with `omarchy plugin add` (every third-party plugin but the
-// bar in use, and the island's own notifications companion, which setup
-// manages: switching it off here would quietly bring back Omarchy's
-// notifications and send the island back to "Click to Setup"). Enter opens an
-// enabled panel, overlay, or menu plugin through the shell; a plugin with no
-// panel of its own is opened through the desktop entry that carries its
-// command instead (hyprmoncfg's layout editor runs in a floating terminal this
-// way). A plugin with neither gets told so, rather than silently switched off -
-// Enter used to disable every bar widget it was pressed on. Shift+Enter always
-// flips enabled, the same as `omarchy plugin enable|disable`.
+// Two things in one list. Third-party plugins (every plugin added with
+// `omarchy plugin add` but the bar in use, and the island's own notifications
+// companion, which setup manages: switching it off here would quietly bring
+// back Omarchy's notifications and send the island back to "Click to Setup").
+// And Omarchy's own panels, which are worth summoning right here: Wi-Fi QR,
+// speed test, reminders, image picker. Enter opens an enabled panel, overlay,
+// or menu plugin through the shell; a plugin with no panel of its own is opened
+// through the desktop entry that carries its command instead (hyprmoncfg's
+// layout editor runs in a floating terminal this way). A plugin with neither
+// gets told so, rather than silently switched off - Enter used to disable every
+// bar widget it was pressed on. Shift+Enter always flips enabled, the same as
+// `omarchy plugin enable|disable`; for a first-party panel that switch is the
+// built-in one, so it is left alone.
 ListPicker {
   id: plugins
-  placeholder: "Search plugins"
-  emptyText: all.length ? "Nothing matches" : loading ? "Loading…" : "No plugins added"
+  placeholder: "搜索插件"
+  emptyText: all.length ? "无匹配插件" : loading ? "加载中…" : "还没有添加插件"
   rowHeight: 46
   visibleRows: 9
   items: {
@@ -41,6 +44,19 @@ ListPicker {
   onActiveChanged: if (active) refresh()
 
   readonly property var openKinds: ["panel", "overlay", "menu"]
+  // Overlays the island already does better itself, so offering Omarchy's copy
+  // of them would only be a second, worse door to the same room.
+  readonly property var replaced: ["omarchy.clipboard", "omarchy.emojis", "omarchy.menu", "omarchy.osd"]
+  function wanted(p) {
+    var kinds = p.kinds || []
+    if (p.id === "guilhermerisu.notifications") return false
+    if (!p.firstParty) return kinds.indexOf("bar") === -1
+    // Omarchy's own panels: only the ones that are switched on, since the
+    // disabled ones are off for a reason and this list is not where you decide
+    // that about the built-in shell.
+    return !!p.enabled && plugins.replaced.indexOf(p.id) === -1
+      && kinds.some(function(k) { return plugins.openKinds.indexOf(k) !== -1 })
+  }
   property var all: []
   property bool loading: false
   // Plugins whose kinds the island cannot open (a bar widget, a headless
@@ -55,13 +71,12 @@ ListPicker {
       onStreamFinished: {
         plugins.loading = false
         try {
-          var added = JSON.parse(text).filter(function(p) {
-            return !p.firstParty && (p.kinds || []).indexOf("bar") === -1 && p.id !== "guilhermerisu.notifications"
-          }).map(function(p) {
+          var added = JSON.parse(text).filter(plugins.wanted).map(function(p) {
             var kinds = p.kinds || []
             return {
               key: p.id, id: String(p.id), name: String(p.name || p.id), kinds: kinds,
               enabled: !!p.enabled, canDisable: p.canDisable !== false,
+              system: !!p.firstParty,
               openable: kinds.some(function(k) { return plugins.openKinds.indexOf(k) !== -1 })
             }
           })
@@ -135,8 +150,16 @@ ListPicker {
   }
 
   // Close first so the plugin's window, not the island, gets the keyboard.
+  // The shell's own API is in-process; the CLI is only the fallback for a host
+  // that was handed no shell object.
   Process { id: runner }
   function open(entry) {
+    if (!entry) return
+    var shell = host.shell
+    if (shell && typeof shell.toggle === "function") {
+      host.withAppFocus(function() { shell.toggle(entry.id, "{}") })
+      return
+    }
     host.view = "rest"
     runner.command = ["bash", "-c", 'sleep 0.15; exec omarchy-shell shell toggle "$1" "{}"', "--", entry.id]
     runner.startDetached()
@@ -146,9 +169,10 @@ ListPicker {
   // terminal the command needs is opened by xdg-terminal-exec under the
   // floating TUI window rule like Omarchy does it.
   function launch(entry) {
-    host.view = "rest"
-    runner.command = ["bash", "-c", 'sleep 0.15; exec uwsm-app -- gtk-launch "$1.desktop"', "--", entry.launcher]
-    runner.startDetached()
+    host.withAppFocus(function() {
+      runner.command = ["bash", "-c", 'exec uwsm-app -- gtk-launch "$1"', "--", entry.launcher]
+      runner.startDetached()
+    })
   }
 
   Process { id: hint }
@@ -197,6 +221,7 @@ ListPicker {
         Text {
           width: parent.width
           text: String(pluginRow.entry.id || "") + " · " + (pluginRow.entry.kinds || []).join(", ")
+            + (pluginRow.entry.system ? " · Omarchy 自带" : "")
           textFormat: Text.PlainText
           elide: Text.ElideRight
           color: plugins.host.theme.muted
@@ -208,9 +233,9 @@ ListPicker {
         id: stateLabel
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
-        text: !pluginRow.entry.enabled ? "Off"
-          : pluginRow.entry.openable ? "Open"
-          : pluginRow.entry.launcher ? "Launch" : "On"
+        text: !pluginRow.entry.enabled ? "关闭"
+          : pluginRow.entry.openable ? "打开"
+          : pluginRow.entry.launcher ? "启动" : "开启"
         color: pluginRow.entry.enabled ? plugins.host.theme.text : plugins.host.theme.muted
         font.family: plugins.host.theme.textFontFamily
         font.pixelSize: plugins.host.theme.px(12)

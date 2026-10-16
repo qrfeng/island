@@ -199,14 +199,14 @@ Item {
       height: 38
       radius: 19
       color: Qt.rgba(1, 1, 1, followup.activeFocus ? 0.14 : 0.07)
-      Behavior on color { ColorAnimation { duration: 140 } }
+      Behavior on color { MotionColorAnimation { theme: answer.host.theme } }
 
       Text {
         id: mark
         anchors.left: parent.left
         anchors.leftMargin: 15
         anchors.verticalCenter: parent.verticalCenter
-        text: ask.busy ? "..." : "?"
+        text: ask.busy ? "…" : "?"
         color: answer.host.theme.muted
         font.family: answer.host.theme.textFontFamily
         font.pixelSize: answer.host.theme.px(14)
@@ -232,7 +232,7 @@ Item {
           anchors.fill: parent
           verticalAlignment: Text.AlignVCenter
           visible: followup.text === ""
-          text: ask.busy ? "Thinking..." : "Ask a follow-up"
+          text: ask.busy ? "思考中…" : "继续追问"
           color: answer.host.theme.muted
           font: followup.font
         }
@@ -245,7 +245,7 @@ Item {
         anchors.rightMargin: 16
         anchors.verticalCenter: parent.verticalCenter
         visible: ask.text !== "" && !ask.busy && followup.text === ""
-        text: "Copy"
+        text: "复制"
         color: copyMouse.containsMouse ? "#ffffff" : answer.host.theme.muted
         font.family: answer.host.theme.textFontFamily
         font.pixelSize: answer.host.theme.px(12)

@@ -9,6 +9,10 @@ import Quickshell.Io
 Item {
   id: updater
   required property string pluginDir
+  // Settings → General → Updates (`autoUpdate`). Off: no check, no banner, no
+  // install, so the plugin stays exactly as it is on disk. (Not `enabled`: QQuickItem
+  // already owns that name.)
+  property bool allowUpdate: true
   // "", "available", or "updating".
   property string status: ""
   // A newer version is on GitHub.
@@ -16,21 +20,21 @@ Item {
 
   // The notification pill's row for an update banner; clicking it updates.
   function bannerRow(body) {
-    return { summary: "Island Update", body: body, glyph: "󰚰", timestamp: Date.now(), islandUpdate: true }
+    return { summary: "island 更新", body: body, glyph: "󰚰", timestamp: Date.now(), islandUpdate: true }
   }
   function update() {
-    if (status === "updating") return
+    if (!allowUpdate || status === "updating") return
     status = "updating"
     installUpdate.running = true
   }
 
   Timer {
     interval: 20000
-    running: true
+    running: updater.allowUpdate
     repeat: true
     onTriggered: {
       interval = 6 * 3600 * 1000
-      if (!updateCheck.running && updater.status !== "updating") updateCheck.running = true
+      if (updater.allowUpdate && !updateCheck.running && updater.status !== "updating") updateCheck.running = true
     }
   }
   Process {
@@ -47,6 +51,6 @@ Item {
   }
   Process {
     id: installUpdate
-    command: ["setsid", "-f", "bash", "-c", "if omarchy-plugin-update \"$1\" --yes >/dev/null 2>&1; then omarchy restart shell; else notify-send -a Island -i system-software-update 'Island Update' \"Couldn't update. The plugin folder has local changes.\"; fi", "island-update", updater.pluginDir.replace(/.*\//, "")]
+    command: ["setsid", "-f", "bash", "-c", "if omarchy-plugin-update \"$1\" --yes >/dev/null 2>&1; then omarchy restart shell; else notify-send -a Island -i system-software-update 'island 更新' \"更新失败：插件目录里有本地改动。\"; fi", "island-update", updater.pluginDir.replace(/.*\//, "")]
   }
 }

@@ -21,7 +21,7 @@ Rectangle {
     anchors.right: chevron.left
     anchors.rightMargin: 8
     anchors.verticalCenter: parent.verticalCenter
-    text: picker.value !== "" ? picker.value : "Pick a font"
+    text: picker.value !== "" ? picker.value : "选择字体"
     elide: Text.ElideRight
     color: picker.value !== "" ? picker.view.text : picker.view.textMuted
     font.family: picker.view.host.theme.textFontFamily

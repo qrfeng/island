@@ -34,7 +34,7 @@ Rectangle {
     Text {
       width: parent.width
       horizontalAlignment: header.compact ? Text.AlignLeft : Text.AlignHCenter
-      text: header.page
+      text: header.view.pageLabel(header.page)
       color: header.view.text
       font.family: header.view.host.theme.textFontFamily
       font.pixelSize: header.compact ? header.view.host.theme.px(22) : header.view.detailTitleFontSize

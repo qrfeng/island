@@ -1,0 +1,31 @@
+id = "guilhermerisu.island-stamp"
+name = "Island agent stamp"
+version = "0.1.0"
+min_herdr_version = "0.9.3"
+description = "把 agent 状态变化写成一个戳文件，让 island 的会话看板不用轮询 herdr。"
+platforms = ["linux", "macos"]
+
+# 只写文件，不调任何 herdr 命令：事件回调里再回调 herdr 容易自己咬自己。
+[[events]]
+on = "pane.agent_status_changed"
+command = ["sh", "agent-stamp.sh", "status"]
+
+[[events]]
+on = "pane.agent_detected"
+command = ["sh", "agent-stamp.sh", "detect"]
+
+[[events]]
+on = "pane.created"
+command = ["sh", "agent-stamp.sh", "layout"]
+
+[[events]]
+on = "pane.closed"
+command = ["sh", "agent-stamp.sh", "layout"]
+
+[[events]]
+on = "pane.focused"
+command = ["sh", "agent-stamp.sh", "focus"]
+
+[[events]]
+on = "tab.focused"
+command = ["sh", "agent-stamp.sh", "focus"]

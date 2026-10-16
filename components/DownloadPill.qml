@@ -156,7 +156,7 @@ Item {
       Text {
         width: parent.width
         text: pill.packageMode ? pill.packages.finishedDetail
-          : "Downloaded" + (pill.tracker.finishedBytes > 0 ? " · " + pill.formatBytes(pill.tracker.finishedBytes) : "")
+          : "已下载" + (pill.tracker.finishedBytes > 0 ? " · " + pill.formatBytes(pill.tracker.finishedBytes) : "")
         textFormat: Text.PlainText
         elide: Text.ElideRight
         color: Qt.rgba(1, 1, 1, 0.55)
@@ -178,7 +178,7 @@ Item {
       Text {
         id: openLabel
         anchors.centerIn: parent
-        text: "Open"
+        text: "打开"
         color: pill.activityAccent
         font.family: pill.host.theme.textFontFamily
         font.pixelSize: pill.host.theme.px(14)

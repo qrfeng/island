@@ -10,12 +10,12 @@ CcSection {
   readonly property var controls: center.controls
   readonly property bool galleryPreview: parent.galleryPreview
   anchors.fill: parent
-  title: "Microphone"
-  detail: !card.controls.controlPresent("microphone") ? "Unavailable" : card.controls.microphoneMuted ? "Muted" : Math.round(card.controls.microphoneVolume * 100) + "%"
+  title: "麦克风"
+  detail: !card.controls.controlPresent("microphone") ? "不可用" : card.controls.microphoneMuted ? "已静音" : Math.round(card.controls.microphoneVolume * 100) + "%"
   showChevron: !galleryPreview && !card.center.editMode && card.controls.inputs.length > 1
   chevronOpen: card.center.inputsOpen
-  chevronLabel: "Microphone Input"
-  chevronHideLabel: "Hide Inputs"
+  chevronLabel: "麦克风输入"
+  chevronHideLabel: "隐藏输入"
   onChevronClicked: { card.center.inputsOpen = !card.center.inputsOpen; card.center.outputsOpen = false }
 
   CcSlider {
@@ -26,7 +26,7 @@ CcSection {
     onMoved: function(v) {
       if (card.controls.microphoneReady) card.controls.microphoneSource.audio.volume = v
     }
-    Tooltip { theme: center.host.theme; text: "Microphone Input Volume" }
+    Tooltip { theme: center.host.theme; text: "麦克风输入音量" }
   }
   Repeater {
     model: !galleryPreview && card.center.inputsOpen && !card.center.editMode ? card.controls.inputs : []

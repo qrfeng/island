@@ -194,7 +194,7 @@ ColumnLayout {
               required property int index
               view: page.view
               keybinds: page.view.keybinds
-              entry: addon.shortcuts.length === 1 ? Object.assign({}, modelData, { label: "Keyboard Shortcut" }) : modelData
+              entry: addon.shortcuts.length === 1 ? Object.assign({}, modelData, { label: "快捷键" }) : modelData
               last: index === addon.shortcuts.length - 1
             }
           }
@@ -208,7 +208,7 @@ ColumnLayout {
     Layout.fillWidth: true
     Layout.topMargin: 12
     horizontalAlignment: Text.AlignHCenter
-    text: "No addons available"
+    text: "无可用小组件"
     color: page.view.textMuted
     font.family: page.view.host.theme.textFontFamily
     font.pixelSize: page.view.detailFontSize

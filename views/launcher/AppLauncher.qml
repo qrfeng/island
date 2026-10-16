@@ -14,8 +14,8 @@ import "file:///usr/share/omarchy/shell/services/AppSearch.js" as AppSearch
 // so or no app matches.
 ListPicker {
   id: launcher
-  placeholder: ["Search"].concat(host.addons.launcherHints).join(" or ")
-  emptyText: "No apps match"
+  placeholder: ["搜索应用"].concat(host.addons.launcherHints).join(" 或 ")
+  emptyText: "无匹配应用"
   items: {
     var text = query.trim()
     if (!text) return results

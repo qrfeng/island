@@ -3,11 +3,15 @@ import QtQuick.Layouts
 import "../../components"
 
 // Agent usage: what the coding agents on this machine have spent. One tab per
-// agent that has a usage record (Pi, and Claude Code, Codex, and Fireworks
-// when Omarchy's collectors have anything for them), each with its rate limits
+// agent that has a usage record (Pi and Claude Code, read off their own
+// sessions; Codex and Fireworks too with --others), each with its rate limits
 // and their reset, today's tokens, prompts, and sessions, the last week a day
-// at a time, the models it went through and what each cost, and - for Pi, which
-// keeps it in its sessions - the endpoint and the folder behind every figure.
+// at a time, and the models it went through and what each cost.
+//
+// Deliberately not here: which endpoint answered and which folder a session ran
+// in. A token count is the figure worth a glance, and splitting it by provider
+// or by directory turns one number into a table (the records still carry both,
+// for Omarchy's own panel; collector.py drops them before this view sees them).
 //
 // Click a tab or use Left and Right; `r` reads the records again, Esc closes.
 // The numbers come from AgentUsage (see AgentsAddon), which reads what
@@ -59,10 +63,10 @@ Item {
   // A model's split, on its own line: input, output, cache, and what it cost.
   function modelDetail(m) {
     if (!m) return ""
-    var parts = ["in " + view.count(m.inputTokens), "out " + view.count(m.outputTokens)]
+    var parts = ["输入 " + view.count(m.inputTokens), "输出 " + view.count(m.outputTokens)]
     var cache = Number(m.cacheReadTokens) || 0, write = Number(m.cacheWriteTokens) || 0
-    if (cache > 0) parts.push("cache " + view.count(cache))
-    if (write > 0) parts.push("write " + view.count(write))
+    if (cache > 0) parts.push("缓存 " + view.count(cache))
+    if (write > 0) parts.push("写入 " + view.count(write))
     var spent = view.cost(m.costCny)
     if (spent !== "") parts.push(spent)
     return parts.join("  /  ")
@@ -88,10 +92,10 @@ Item {
     var at = new Date(String(iso || "")).getTime()
     if (isNaN(at)) return ""
     var mins = Math.round((at - host.clockDate.getTime()) / 60000)
-    if (mins <= 0) return "resetting"
+    if (mins <= 0) return "重置中"
     var hours = Math.floor(mins / 60)
-    if (hours >= 24) return Math.round(hours / 24) + "d left"
-    return hours >= 1 ? hours + "h " + (mins % 60) + "m left" : mins + "m left"
+    if (hours >= 24) return Math.round(hours / 24) + "天后重置"
+    return hours >= 1 ? hours + "小时" + (mins % 60) + "分后重置" : mins + "分后重置"
   }
 
   // The week's rows and their widest day, the models' widest model: the bars
@@ -112,10 +116,6 @@ Item {
   property int peakDay: 0
   readonly property var models: (view.agent && view.agent.models) ? view.agent.models : []
   readonly property int peakModel: models.length ? (Number(models[0].tokens) || 0) : 0
-  readonly property var providers: (view.agent && view.agent.byProvider) ? view.agent.byProvider : []
-  readonly property int peakProvider: providers.length ? (Number(providers[0].tokens) || 0) : 0
-  readonly property var projects: (view.agent && view.agent.byProject) ? view.agent.byProject : []
-  readonly property int peakProject: projects.length ? (Number(projects[0].tokens) || 0) : 0
   readonly property int peakAll: Math.max(peakDay, peakModel)
 
   ColumnLayout {
@@ -130,7 +130,7 @@ Item {
       Layout.fillWidth: true
       spacing: 10
       Text {
-        text: "Agent usage"
+        text: "Agent 用量"
         color: view.theme.muted
         font.family: view.theme.textFontFamily
         font.pixelSize: view.theme.px(12)
@@ -141,14 +141,31 @@ Item {
       Item { Layout.fillWidth: true }
       Text {
         visible: usage.fetchedAt > 0
-        text: usage.loading ? "Reading..."
-          : "Updated " + (usage.list.length ? usage.timeText(usage.list[0].updatedAt) || "--:--" : "--:--")
+        text: usage.loading ? "读取中…"
+          : "更新于 " + (usage.list.length ? usage.timeText(usage.list[0].updatedAt) || "--:--" : "--:--")
         color: view.theme.muted
         font.family: view.theme.textFontFamily
         font.pixelSize: view.theme.px(12)
       }
+      // The board is the other half of this addon: same subject, other
+      // question. (The board carries the matching tab strip back here.)
       Text {
-        text: usage.loading ? "" : "Refresh"
+        text: usage.herdr === "" ? "" : "会话 ›"
+        color: boardLink.containsMouse ? "#ffffff" : view.theme.muted
+        font.family: view.theme.textFontFamily
+        font.pixelSize: view.theme.px(12)
+        font.weight: Font.DemiBold
+        MouseArea {
+          id: boardLink
+          anchors.fill: parent
+          anchors.margins: -6
+          hoverEnabled: true
+          cursorShape: Qt.PointingHandCursor
+          onClicked: view.host.view = "sessions"
+        }
+      }
+      Text {
+        text: usage.loading ? "" : "刷新"
         color: refreshMouse.containsMouse ? "#ffffff" : view.theme.muted
         font.family: view.theme.textFontFamily
         font.pixelSize: view.theme.px(12)
@@ -181,7 +198,7 @@ Item {
           radius: 14
           width: label.implicitWidth + 24
           color: chosen ? view.theme.accent : Qt.rgba(1, 1, 1, 0.07)
-          Behavior on color { ColorAnimation { duration: 140 } }
+          Behavior on color { MotionColorAnimation { theme: view.theme } }
           Text {
             id: label
             anchors.centerIn: parent
@@ -214,8 +231,8 @@ Item {
     Text {
       Layout.fillWidth: true
       visible: !usage.loading && usage.list.length === 0
-      text: "No usage recorded yet. Run `omarchy agent usage update` to collect "
-        + "Claude Code, Codex, and Fireworks; Pi is read from its own sessions."
+      text: "还没有用量记录。Pi 和 Claude Code 直接读各自本地的会话记录；"
+        + "运行 `omarchy agent usage update` 可以加上 Codex 和 Fireworks。"
       color: view.theme.muted
       font.family: view.theme.textFontFamily
       font.pixelSize: view.theme.px(13)
@@ -262,7 +279,7 @@ Item {
                   font.pixelSize: view.theme.px(13)
                 }
                 Text {
-                  text: Math.round(Number(modelData.percent) * 100) + "% used"
+                  text: Math.round(Number(modelData.percent) * 100) + "% 已用"
                   color: view.theme.text
                   font.family: view.theme.textFontFamily
                   font.pixelSize: view.theme.px(13)
@@ -303,20 +320,20 @@ Item {
           spacing: 16
           Stat {
             value: view.count(view.agent ? view.agent.todayTotalTokens : 0)
-            caption: "tokens today"
+            caption: "今日 tokens"
           }
           Stat {
             value: String(Number(view.agent ? view.agent.todayPrompts : 0) || 0)
-            caption: "prompts today"
+            caption: "今日提问"
           }
           Stat {
             value: String(Number(view.agent ? view.agent.todaySessions : 0) || 0)
-            caption: "sessions today"
+            caption: "今日会话"
           }
           Stat {
             visible: view.cost(view.agent ? view.agent.todayCostCny : 0) !== ""
             value: view.cost(view.agent ? view.agent.todayCostCny : 0)
-            caption: "spent today"
+            caption: "今日花费"
           }
           Item { Layout.fillWidth: true }
         }
@@ -326,7 +343,7 @@ Item {
           Layout.fillWidth: true
           visible: view.days.length > 0
           spacing: 6
-          Caption { text: "Last 7 days" }
+          Caption { text: "最近7天" }
           Repeater {
             model: view.days
             delegate: RowLayout {
@@ -364,7 +381,7 @@ Item {
           Layout.fillWidth: true
           visible: view.models.length > 0
           spacing: 8
-          Caption { text: "Tokens by model" }
+          Caption { text: "模型用量" }
           Repeater {
             model: view.models
             delegate: ColumnLayout {
@@ -409,98 +426,6 @@ Item {
             }
           }
         }
-
-        // Pi answers through more than one endpoint: which one spent what.
-        Repeater {
-          model: view.providers.length > 0 ? [1] : []
-          delegate: ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 6
-            Caption { text: "By endpoint" }
-            Repeater {
-              model: view.providers
-              delegate: RowLayout {
-                required property var modelData
-                Layout.fillWidth: true
-                spacing: 10
-                Text {
-                  Layout.preferredWidth: 110
-                  text: String(modelData.name)
-                  elide: Text.ElideRight
-                  color: view.theme.text
-                  font.family: view.theme.textFontFamily
-                  font.pixelSize: view.theme.px(12)
-                }
-                Meter {
-                  fraction: view.peakProvider > 0 ? (Number(modelData.tokens) || 0) / view.peakProvider : 0
-                  fill: view.theme.accent
-                  dim: true
-                }
-                Text {
-                  Layout.preferredWidth: 58
-                  horizontalAlignment: Text.AlignRight
-                  text: view.count(modelData.tokens)
-                  color: view.theme.text
-                  font.family: view.theme.textFontFamily
-                  font.pixelSize: view.theme.px(12)
-                }
-                Text {
-                  Layout.preferredWidth: 66
-                  text: String(Number(modelData.sessions) || 0) + " sess"
-                  color: view.theme.muted
-                  font.family: view.theme.textFontFamily
-                  font.pixelSize: view.theme.px(11)
-                }
-              }
-            }
-          }
-        }
-
-        // And which folder it all went through, Pi's sessions by their own cwd.
-        Repeater {
-          model: view.projects.length > 0 ? [1] : []
-          delegate: ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 6
-            Caption { text: "By project" }
-            Repeater {
-              model: view.projects
-              delegate: RowLayout {
-                required property var modelData
-                Layout.fillWidth: true
-                spacing: 10
-                Text {
-                  Layout.preferredWidth: 110
-                  text: String(modelData.name)
-                  elide: Text.ElideRight
-                  color: view.theme.text
-                  font.family: view.theme.textFontFamily
-                  font.pixelSize: view.theme.px(12)
-                }
-                Meter {
-                  fraction: view.peakProject > 0 ? (Number(modelData.tokens) || 0) / view.peakProject : 0
-                  fill: "#ffffff"
-                  dim: true
-                }
-                Text {
-                  Layout.preferredWidth: 58
-                  horizontalAlignment: Text.AlignRight
-                  text: view.count(modelData.tokens)
-                  color: view.theme.text
-                  font.family: view.theme.textFontFamily
-                  font.pixelSize: view.theme.px(12)
-                }
-                Text {
-                  Layout.preferredWidth: 66
-                  text: String(Number(modelData.sessions) || 0) + " sess"
-                  color: view.theme.muted
-                  font.family: view.theme.textFontFamily
-                  font.pixelSize: view.theme.px(11)
-                }
-              }
-            }
-          }
-        }
       }
     }
     // All time: model totals cover everything, not just the week.
@@ -509,9 +434,9 @@ Item {
       visible: view.agent !== null
       spacing: 6
       Text {
-        text: "All time " + view.count(view.agent ? view.agent.allTimeTokens : 0) + " tokens"
-          + " / " + String(Number(view.agent ? view.agent.totalSessions : 0) || 0) + " sessions"
-          + " / " + String(Number(view.agent ? view.agent.activeDays : 0) || 0) + " active days"
+        text: "全部 " + view.count(view.agent ? view.agent.allTimeTokens : 0) + " tokens"
+          + " / " + String(Number(view.agent ? view.agent.totalSessions : 0) || 0) + "次会话"
+          + " / " + String(Number(view.agent ? view.agent.activeDays : 0) || 0) + "天活跃"
           + (view.cost(view.agent ? view.agent.totalCostCny : 0) !== ""
              ? " / " + view.cost(view.agent ? view.agent.totalCostCny : 0) : "")
         color: view.theme.muted
@@ -541,7 +466,7 @@ Item {
       radius: parent.radius
       color: meter.fill
       opacity: meter.dim ? 0.6 : 1
-      Behavior on width { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
+      Behavior on width { MotionAnimation { theme: view.theme; pace: "expressive" } }
     }
   }
 

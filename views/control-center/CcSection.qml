@@ -11,8 +11,8 @@ Rectangle {
   property string detail: ""
   property bool showChevron: false
   property bool chevronOpen: false
-  property string chevronLabel: "Sound Output"
-  property string chevronHideLabel: "Hide Outputs"
+  property string chevronLabel: "声音输出"
+  property string chevronHideLabel: "隐藏输出"
   signal chevronClicked()
   default property alias content: body.data
 

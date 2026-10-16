@@ -9,7 +9,7 @@ import ".."
 Addon {
   id: timerAddon
   views: [{ name: "timer", width: 440, padding: 20, component: timerView }]
-  tiles: [{ key: "timer", title: "Timer", component: timerTile }]
+  tiles: [{ key: "timer", title: "计时器", component: timerTile }]
   pill: Component { TimerPill { timer: timerAddon } }
   ongoing: phase !== "idle"
   pillWidth: 240
@@ -72,14 +72,14 @@ Addon {
   function togglePause() { phase === "running" ? pause() : resume() }
   function cancel() { phase = "idle" }
 
-  // Ended: unset, and said so in a notification ("Timer", "Your 15 min timer
-  // is up"), which the island draws with the timer's own orange icon (see
+  // Ended: unset, and said so in a notification ("计时器", "15分钟计时结束"),
+  // which the island draws with the timer's own orange icon (see
   // NotificationClient).
   Process { id: notifier }
   function finish() {
     phase = "idle"
-    notifier.command = ["notify-send", "-a", "Island Timer", "Timer",
-      "Your " + durationText(duration) + " timer is up"]
+    notifier.command = ["notify-send", "-a", "Island Timer", "计时器",
+      durationText(duration) + "计时结束"]
     notifier.startDetached()
   }
 
@@ -92,16 +92,16 @@ Addon {
     return h > 0 ? h + ":" + two(m) + ":" + two(s) : two(m) + ":" + two(s)
   }
 
-  // A length as said: "15 min", "1 h 30 min", "1 min 30 sec", "45 sec".
+  // A length as said: "15分钟", "1小时30分钟", "1分钟30秒", "45秒".
   function parts(ms) {
     var total = Math.round(ms / 1000)
     return { h: Math.floor(total / 3600), m: Math.floor(total / 60) % 60, s: total % 60 }
   }
   function durationText(ms) {
     var p = parts(ms), said = []
-    if (p.h) said.push(p.h + " h")
-    if (p.m) said.push(p.m + " min")
-    if (p.s) said.push(p.s + " sec")
-    return said.join(" ")
+    if (p.h) said.push(p.h + "小时")
+    if (p.m) said.push(p.m + "分钟")
+    if (p.s) said.push(p.s + "秒")
+    return said.join("")
   }
 }

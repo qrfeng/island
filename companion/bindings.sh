@@ -39,6 +39,7 @@ catalog=(
   'calendar|Calendar|show calendar|||calendar'
   'timer|Timer|show timer|||timer'
   'agents|Agent usage|show agents|SUPER + CTRL + U||agents'
+  'sessions|Agent sessions|show sessions|||agents'
   'todos|Task list|show todos|SUPER + CTRL + D||todos'
 )
 

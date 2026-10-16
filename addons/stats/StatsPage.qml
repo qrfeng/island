@@ -40,10 +40,10 @@ ColumnLayout {
   // Memory pressure, from the share of the last 10 s some task waited on
   // memory (PSI): green while nothing waits, yellow, then red.
   function pressureColor(p) { return p >= 20 ? red : p >= 2 ? yellow : green }
-  function pressureName(p) { return p >= 20 ? "Critical" : p >= 2 ? "Warning" : "Normal" }
+  function pressureName(p) { return p >= 20 ? "严重" : p >= 2 ? "警告" : "正常" }
 
   // Load: under a quarter Low, Normal, Busy past 60%, High past 85%.
-  function loadName(v) { return v >= 85 ? "High" : v >= 60 ? "Busy" : v >= 25 ? "Normal" : "Low" }
+  function loadName(v) { return v >= 85 ? "高" : v >= 60 ? "偏高" : v >= 25 ? "正常" : "低" }
   function loadColor(v) { return v >= 85 ? red : v >= 60 ? yellow : green }
   function round(v) { return v === null || v === undefined ? "—" : Math.round(v) + "%" }
 
@@ -67,9 +67,9 @@ ColumnLayout {
         readonly property real busy: page.cpu ? page.cpu.user + page.cpu.system : 0
         value: busy
         rows: [
-          { label: "User", value: page.round(page.cpu && page.cpu.user) },
-          { label: "System", value: page.round(page.cpu && page.cpu.system) },
-          { label: "Idle", value: page.round(page.cpu && page.cpu.idle) }
+          { label: "用户", value: page.round(page.cpu && page.cpu.user) },
+          { label: "系统", value: page.round(page.cpu && page.cpu.system) },
+          { label: "空闲", value: page.round(page.cpu && page.cpu.idle) }
         ]
         status: page.cpu ? page.loadName(busy) : ""
         statusColor: page.loadColor(busy)
@@ -82,12 +82,12 @@ ColumnLayout {
         icon: "󰍛"
         iconColor: page.green
         ringColor: page.green
-        title: "Memory"
+        title: "内存"
         value: page.memory ? page.memory.used / page.memory.total * 100 : 0
         rows: page.memory ? [
-          { label: "Used", value: page.bytes(page.memory.used) },
-          { label: "Free", value: page.bytes(page.memory.total - page.memory.used) },
-          { label: "Swap", value: page.bytes(page.memory.swapUsed) }
+          { label: "已用", value: page.bytes(page.memory.used) },
+          { label: "可用", value: page.bytes(page.memory.total - page.memory.used) },
+          { label: "交换区", value: page.bytes(page.memory.swapUsed) }
         ] : []
         status: page.memory ? page.pressureName(page.memory.pressure) : ""
         statusColor: page.memory ? page.pressureColor(page.memory.pressure) : page.green
@@ -118,9 +118,9 @@ ColumnLayout {
           ringColor: page.teal
           title: page.gpus.length > 1 ? "GPU " + (index + 1) : "GPU"
           value: gpu.usage || 0
-          rows: (gpu.temp != null ? [{ label: "Temp", value: page.temperature(gpu.temp) }] : [])
+          rows: (gpu.temp != null ? [{ label: "温度", value: page.temperature(gpu.temp) }] : [])
             .concat(gpu.vramTotal ? [{ label: "VRAM", value: page.bytes(gpu.vramUsed) }] : [])
-            .concat(gpu.power != null ? [{ label: "Power", value: gpu.power.toFixed(0) + " W" }] : [])
+            .concat(gpu.power != null ? [{ label: "功耗", value: gpu.power.toFixed(0) + " W" }] : [])
           status: gpu.usage != null ? page.loadName(gpu.usage) : ""
           statusColor: page.loadColor(gpu.usage || 0)
         }
@@ -173,7 +173,7 @@ ColumnLayout {
             font.pixelSize: page.view.host.theme.px(16)
           }
           Text {
-            text: "Storage"
+            text: "存储"
             color: page.view.text
             font.family: "Adwaita Sans"
             font.pixelSize: page.view.detailFontSize + 1
@@ -202,7 +202,7 @@ ColumnLayout {
               Layout.fillWidth: true
               Text {
                 Layout.fillWidth: true
-                text: volume.modelData.mount === "/" ? "Startup Disk" : volume.modelData.mount.split("/").pop() || volume.modelData.mount
+                text: volume.modelData.mount === "/" ? "启动磁盘" : volume.modelData.mount.split("/").pop() || volume.modelData.mount
                 elide: Text.ElideRight
                 color: page.view.text
                 font.family: "Adwaita Sans"
@@ -210,7 +210,7 @@ ColumnLayout {
                 font.weight: Font.DemiBold
               }
               Text {
-                text: page.bytes(volume.modelData.used) + " of " + page.bytes(volume.modelData.size) + " used"
+                text: "已用" + page.bytes(volume.modelData.used) + "，共" + page.bytes(volume.modelData.size)
                 color: page.view.textMuted
                 font.family: "Adwaita Sans"
                 font.pixelSize: page.view.host.theme.px(13)
@@ -224,9 +224,9 @@ ColumnLayout {
               barRadius: 5
               total: volume.modelData.size
               segments: [
-                { label: "Used", value: volume.modelData.used, color: volume.full ? page.red : page.blue,
+                { label: "已用", value: volume.modelData.used, color: volume.full ? page.red : page.blue,
                   text: page.bytes(volume.modelData.used) },
-                { label: "Available", value: 0, color: page.view.host.theme.withAlpha(page.view.text, 0.25),
+                { label: "可用", value: 0, color: page.view.host.theme.withAlpha(page.view.text, 0.25),
                   text: page.bytes(volume.free) }
               ]
             }
@@ -267,7 +267,7 @@ ColumnLayout {
             font.pixelSize: page.view.host.theme.px(16)
           }
           Text {
-            text: "Processes"
+            text: "进程"
             color: page.view.text
             font.family: "Adwaita Sans"
             font.pixelSize: page.view.detailFontSize + 1
@@ -294,7 +294,7 @@ ColumnLayout {
               x: 26
               anchors.verticalCenter: parent.verticalCenter
               visible: filter.text === ""
-              text: "Search"
+              text: "搜索"
               color: page.view.textMuted
               font.family: "Adwaita Sans"
               font.pixelSize: page.view.host.theme.px(13)

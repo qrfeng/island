@@ -6,7 +6,7 @@ import QtQuick
 Item {
   id: field
   required property var host
-  property string placeholder: "Search…"
+  property string placeholder: "搜索…"
   property int iconSize: 17
   property int fontSize: 14
   property int inset: 4

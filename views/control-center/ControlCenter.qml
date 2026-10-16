@@ -35,9 +35,40 @@ ColumnLayout {
     cc.forceActiveFocus()
   }
   onActiveChanged: {
-    if (!active) { outputsOpen = false; inputsOpen = false; editMode = false; controlLayout.endDrag(); return }
-    Qt.callLater(function() { cc.forceActiveFocus() })
+    if (!active) {
+      revealed = false
+      outputsOpen = false; inputsOpen = false; editMode = false; controlLayout.endDrag(); return
+    }
+    // Rest the tiles out of the way first, then let them in one tick later, once
+    // the grid is laid out and every tile's place in the cascade is known.
+    Qt.callLater(function() { cc.forceActiveFocus(); cc.revealed = true })
     controls.refresh()
+  }
+
+  // ---------- Entrance choreography ----------
+  // The tiles land on top of the island's own open morph: each one fades in and
+  // lifts into place just after the tile before it, so a glance reads the grid as
+  // assembling instead of simply appearing. The delay lives in the per-card
+  // Behaviors on the cards below, indexed by the grid's own order, so nothing
+  // ticks while the panel sits open.
+  property bool revealed: false
+  readonly property int revealStagger: 20    // ms between neighbouring tiles
+  readonly property int revealStaggerMax: 8  // tiles that stagger; the later ones land together
+  // controlKey -> grid order, taken from the grid's own visible list so the
+  // cascade still follows the tiles on screen after the user reorders them.
+  readonly property var revealRanks: {
+    var ranks = {}
+    var keys = controlLayout.visibleControlKeys
+    for (var i = 0; i < keys.length; i++) {
+      if (!(keys[i] in ranks)) ranks[keys[i]] = i
+    }
+    return ranks
+  }
+  // Past the cap every tile waits the longest delay, so a full grid still lands
+  // together instead of trickling in.
+  function revealDelay(key) {
+    var rank = revealRanks.hasOwnProperty(key) ? revealRanks[key] : revealStaggerMax
+    return Math.min(rank, revealStaggerMax) * revealStagger
   }
   function controlComponent(key) {
     var tile = host.addons.tileFor(key)
@@ -64,7 +95,7 @@ ColumnLayout {
     Layout.leftMargin: 4
     Layout.rightMargin: 4
     Text {
-      text: "Control Center"
+      text: "控制中心"
       color: cc.text
       font.family: cc.host.theme.textFontFamily
       font.pixelSize: cc.host.theme.px(17)
@@ -76,10 +107,10 @@ ColumnLayout {
       Layout.preferredHeight: 32
       radius: 16
       color: editMouse.containsMouse || cc.editMode ? cc.well : cc.card
-      Tooltip { theme: cc.host.theme; text: cc.editMode ? "" : "Edit Controls" }
+      Tooltip { theme: cc.host.theme; text: cc.editMode ? "" : "编辑控件" }
       Text {
         anchors.centerIn: parent
-        text: cc.editMode ? "Done" : "󰏫"
+        text: cc.editMode ? "完成" : "󰏫"
         color: cc.text
         font.family: cc.editMode ? cc.host.theme.textFontFamily : cc.iconFont
         font.pixelSize: cc.editMode ? cc.host.theme.px(12) : cc.host.theme.px(17)
@@ -98,7 +129,7 @@ ColumnLayout {
       Layout.preferredHeight: 32
       radius: 16
       color: settingsMouse.containsMouse ? cc.well : cc.card
-      Tooltip { theme: cc.host.theme; text: "Island Settings" }
+      Tooltip { theme: cc.host.theme; text: "island 设置" }
       Text {
         anchors.centerIn: parent
         text: "󰒓"
@@ -154,23 +185,141 @@ ColumnLayout {
 
   // ---------- Cards, loaded by the grid and the gallery ----------
 
+  // Each card is wrapped in a surface that owns the entrance: the cards bind
+  // their own opacity (a CcTile dims to half while unavailable) and that binding
+  // has to keep working, so the cascade rides on a parent of theirs instead. The
+  // wrapper is a plain Item filled by the Loader that loads it, which is how all
+  // three of its users (grid, gallery, drag ghost's source) size it anyway.
   Component {
     id: quickCard
-    CcTile {
-      center: cc
+    Item {
+      id: revealQuick
+      property var center: cc
+      // The grid, the gallery and the drag ghost all declare `controlKey` and
+      // `galleryPreview` on the Loader that loads this component, so the wrapper
+      // has to forward them from its own parent: the card below still reads
+      // `parent.controlKey`, and its parent is now this item.
+      readonly property string controlKey: parent && parent.controlKey !== undefined ? String(parent.controlKey) : ""
+      readonly property bool galleryPreview: parent ? parent.galleryPreview === true : false
       anchors.fill: parent
-      icon: cc.controls.controlIcon(parent.controlKey)
-      title: cc.controls.controlTitle(parent.controlKey)
-      subtitle: cc.controls.controlSubtitle(parent.controlKey)
-      checked: cc.controls.controlChecked(parent.controlKey)
-      available: parent.galleryPreview || cc.controls.controlAvailable(parent.controlKey)
-      clickable: cc.controls.controlClickable(parent.controlKey)
-      opens: (parent.controlKey === "bluetooth" && !!cc.controls.btAdapter) || (parent.controlKey === "wifi" && !!cc.controls.wifiDevice)
-      onClicked: cc.controls.toggleControl(parent.controlKey)
-      onOpened: cc.host.view = parent.controlKey
+      opacity: cc.revealed ? 1 : 0
+      Behavior on opacity {
+        enabled: cc.revealed
+        SequentialAnimation {
+          PauseAnimation { duration: cc.revealDelay(revealQuick.controlKey) }
+          MotionAnimation { theme: cc.host.theme; pace: "standard" }
+        }
+      }
+      transform: Translate {
+        y: cc.revealed ? 0 : 6
+        Behavior on y {
+          enabled: cc.revealed
+          SequentialAnimation {
+            PauseAnimation { duration: cc.revealDelay(revealQuick.controlKey) }
+            MotionAnimation { theme: cc.host.theme; pace: "standard"; curve: "morph" }
+          }
+        }
+      }
+      CcTile {
+        center: cc
+        anchors.fill: parent
+        icon: cc.controls.controlIcon(parent.controlKey)
+        title: cc.controls.controlTitle(parent.controlKey)
+        subtitle: cc.controls.controlSubtitle(parent.controlKey)
+        checked: cc.controls.controlChecked(parent.controlKey)
+        available: parent.galleryPreview || cc.controls.controlAvailable(parent.controlKey)
+        clickable: cc.controls.controlClickable(parent.controlKey)
+        opens: (parent.controlKey === "bluetooth" && !!cc.controls.btAdapter) || (parent.controlKey === "wifi" && !!cc.controls.wifiDevice)
+        onClicked: cc.controls.toggleControl(parent.controlKey)
+        onOpened: cc.host.view = parent.controlKey
+      }
     }
   }
-  Component { id: soundCard; SoundCard { center: cc } }
-  Component { id: microphoneCard; MicrophoneCard { center: cc } }
-  Component { id: displayCard; DisplayCard { center: cc } }
+  Component {
+    id: soundCard
+    Item {
+      id: revealSound
+      property var center: cc
+      property string controlKey: "sound"
+      property bool galleryPreview: false
+      anchors.fill: parent
+      opacity: cc.revealed ? 1 : 0
+      Behavior on opacity {
+        enabled: cc.revealed
+        SequentialAnimation {
+          PauseAnimation { duration: cc.revealDelay(revealSound.controlKey) }
+          MotionAnimation { theme: cc.host.theme; pace: "standard" }
+        }
+      }
+      transform: Translate {
+        y: cc.revealed ? 0 : 6
+        Behavior on y {
+          enabled: cc.revealed
+          SequentialAnimation {
+            PauseAnimation { duration: cc.revealDelay(revealSound.controlKey) }
+            MotionAnimation { theme: cc.host.theme; pace: "standard"; curve: "morph" }
+          }
+        }
+      }
+      SoundCard { center: cc }
+    }
+  }
+  Component {
+    id: microphoneCard
+    Item {
+      id: revealMicrophone
+      property var center: cc
+      property string controlKey: "microphone"
+      property bool galleryPreview: false
+      anchors.fill: parent
+      opacity: cc.revealed ? 1 : 0
+      Behavior on opacity {
+        enabled: cc.revealed
+        SequentialAnimation {
+          PauseAnimation { duration: cc.revealDelay(revealMicrophone.controlKey) }
+          MotionAnimation { theme: cc.host.theme; pace: "standard" }
+        }
+      }
+      transform: Translate {
+        y: cc.revealed ? 0 : 6
+        Behavior on y {
+          enabled: cc.revealed
+          SequentialAnimation {
+            PauseAnimation { duration: cc.revealDelay(revealMicrophone.controlKey) }
+            MotionAnimation { theme: cc.host.theme; pace: "standard"; curve: "morph" }
+          }
+        }
+      }
+      MicrophoneCard { center: cc }
+    }
+  }
+  Component {
+    id: displayCard
+    Item {
+      id: revealDisplay
+      property var center: cc
+      property string controlKey: "display"
+      property bool galleryPreview: false
+      anchors.fill: parent
+      opacity: cc.revealed ? 1 : 0
+      Behavior on opacity {
+        enabled: cc.revealed
+        SequentialAnimation {
+          PauseAnimation { duration: cc.revealDelay(revealDisplay.controlKey) }
+          MotionAnimation { theme: cc.host.theme; pace: "standard" }
+        }
+      }
+      transform: Translate {
+        y: cc.revealed ? 0 : 6
+        Behavior on y {
+          enabled: cc.revealed
+          SequentialAnimation {
+            PauseAnimation { duration: cc.revealDelay(revealDisplay.controlKey) }
+            MotionAnimation { theme: cc.host.theme; pace: "standard"; curve: "morph" }
+          }
+        }
+      }
+      DisplayCard { center: cc }
+    }
+  }
 }

@@ -161,7 +161,7 @@ ColumnLayout {
   }
 
   function shortcutText(keys) {
-    if (!keys) return "None"
+    if (!keys) return "无"
     var names = {
       SUPER: "Super", SHIFT: "Shift", CTRL: "Ctrl", ALT: "Alt",
       ESCAPE: "Esc", RETURN: "Enter", BACKSPACE: "Backspace", PRIOR: "Page Up", NEXT: "Page Down",
@@ -174,10 +174,10 @@ ColumnLayout {
   }
 
   readonly property var shortcutSections: [
-    { title: "Menus", ids: ["menu", "apps", "power"] },
-    { title: "Search", ids: ["keybinds", "emoji", "clipboard"] },
-    { title: "Appearance", ids: ["themes", "wallpapers"] },
-    { title: "Island", ids: ["controls", "player", "settings"] }
+    { title: "菜单", ids: ["menu", "apps", "power"] },
+    { title: "搜索", ids: ["keybinds", "emoji", "clipboard"] },
+    { title: "外观", ids: ["themes", "wallpapers"] },
+    { title: "界面", ids: ["controls", "player", "settings"] }
   ]
   function addonEntries(addonId) {
     return page.shortcuts.filter(function(e) { return e.addon === addonId })
@@ -211,7 +211,7 @@ ColumnLayout {
 
   RowLayout {
     Layout.fillWidth: true
-    SettingsButton { view: page.view; label: "Restore Defaults"; onClicked: page.restoreDefaults() }
+    SettingsButton { view: page.view; label: "恢复默认"; onClicked: page.restoreDefaults() }
     Item { Layout.fillWidth: true }
   }
 
@@ -259,7 +259,7 @@ ColumnLayout {
         page.setShortcut(id, "")
         return
       }
-      if (mods.length === 0 && !/^F\d+$/.test(name)) { page.recordHint = "Add a Modifier"; return }
+      if (mods.length === 0 && !/^F\d+$/.test(name)) { page.recordHint = "需要搭配修饰键"; return }
       page.captured(mods.concat([name]).join(" + "))
     }
   }

@@ -147,7 +147,7 @@ ColumnLayout {
       parent: controlLayoutScroll
       anchors.centerIn: parent
       visible: layout.center.editMode && layout.visibleControlKeys.length === 0
-      text: "Drag a control here"
+      text: "把控件拖到这里"
       color: layout.center.textMuted
       font.family: layout.center.host.theme.textFontFamily
       font.pixelSize: layout.center.host.theme.px(13)
@@ -244,7 +244,7 @@ ColumnLayout {
             width: 22; height: 22; radius: 11
             color: Qt.tint(layout.center.wellHover, layout.center.host.theme.withAlpha(layout.center.text, 0.12))
             Rectangle { anchors.centerIn: parent; width: 10; height: 2; radius: 1; color: layout.center.host.theme.background }
-            Tooltip { theme: layout.center.host.theme; text: "Remove" }
+            Tooltip { theme: layout.center.host.theme; text: "移除" }
             MouseArea {
               anchors.fill: parent
               cursorShape: Qt.PointingHandCursor
@@ -266,7 +266,7 @@ ColumnLayout {
     border.color: layout.center.edge
     Text {
       anchors.centerIn: parent
-      text: "Click the pencil to add controls"
+      text: "点铅笔图标添加控件"
       color: layout.center.textMuted
       font.family: layout.center.host.theme.textFontFamily
       font.pixelSize: layout.center.host.theme.px(12)

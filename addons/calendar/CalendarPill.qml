@@ -101,7 +101,7 @@ Item {
         Text {
           anchors.centerIn: parent
           anchors.verticalCenterOffset: 0.5
-          text: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"][pill.day.getMonth()]
+          text: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"][pill.day.getMonth()]
           color: "#ffffff"
           font.family: pill.host.theme.textFontFamily
           font.pixelSize: pill.host.theme.px(8)
@@ -170,7 +170,7 @@ Item {
     anchors.right: parent.right
     anchors.rightMargin: 16
     anchors.verticalCenter: parent.verticalCenter
-    text: pill.calendar.reminderMs / 60000 + " min"
+    text: pill.calendar.reminderMs / 60000 + "分钟后"
     color: "#ffffff"
     font.family: pill.host.theme.textFontFamily
     font.pixelSize: pill.host.theme.px(15)

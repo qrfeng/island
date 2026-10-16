@@ -27,23 +27,31 @@ Item {
     return info
   }
   readonly property var corePageInfo: ({
-    "General": { icon: "󰒓", color: "#8e8e93", about: "Appearance, motion, and how the pill looks at rest." },
-    "Live Activities": { icon: "󰨚", color: "#34c759", about: "Choose what shows up on the pill while it's happening." },
-    "Notifications": { icon: "󰂚", color: "#ff3b30", about: "How notification banners appear on the island." },
-    "Addons": { icon: "󰄐", color: "#0a84ff", about: "Extras that stay unloaded until you add them." },
-    "Keybinds": { icon: "󰌌", color: "#8e8e93", about: "Keyboard shortcuts that open each part of the island." }
+    "General": { icon: "󰒓", color: "#8e8e93", about: "外观、动效，以及胶囊静息时的样子" },
+    "Live Activities": { icon: "󰨚", color: "#34c759", about: "选择事情发生时胶囊上显示什么" },
+    "Notifications": { icon: "󰂚", color: "#ff3b30", about: "通知横幅在 island 上的显示方式" },
+    "Addons": { icon: "󰄐", color: "#0a84ff", about: "没添加的小组件不会加载" },
+    "Keybinds": { icon: "󰌌", color: "#8e8e93", about: "打开 island 各部分的快捷键" }
   })
+  // Page keys are compared all over (pages[], pageInfo[], every page's
+  // `visible:`), so they stay English internally and only the labels are
+  // Chinese. Addon pages already arrive with a Chinese title and pass through.
+  readonly property var pageLabels: ({
+    "General": "通用", "Live Activities": "实时活动", "Notifications": "通知",
+    "Addons": "小组件", "Keybinds": "快捷键"
+  })
+  function pageLabel(page) { return pageLabels[page] || page }
   function pageMatches(page) {
     var query = searchQuery.trim().toLowerCase()
     if (query === "") return true
     var terms = {
-      "General": "general appearance display shape island style dynamic island colorful sidebar icons colorful live activities theme accent neutral motion animation speed hover lift pill notch style 24-hour clock font typography text size custom",
-      "Live Activities": "live activities now playing media cover sound wave play pause playback track clipboard downloads system updates battery charging low bluetooth devices network wifi ethernet volume brightness hud osd workspace workspaces indicator",
-      "Notifications": "notifications banner duration",
-      "Addons": "addons extensions extras store cart add remove " + host.addons.entries.map(function(addon) {
+      "General": "general appearance display shape island style dynamic island colorful sidebar icons colorful live activities theme accent neutral motion animation speed hover lift pill notch style 24-hour clock font typography text size custom 通用 外观 界面 风格 主题 强调色 动效 动画 速度 悬停 胶囊 刘海 字体 字号 中文",
+      "Live Activities": "live activities now playing media cover sound wave play pause playback track clipboard downloads system updates battery charging low bluetooth devices network wifi ethernet volume brightness hud osd workspace workspaces indicator 实时活动 正在播放 音乐 封面 声波 播放 暂停 剪贴板 下载 系统更新 电池 电量低 蓝牙 设备 网络 有线 音量 亮度 工作区 显示器",
+      "Notifications": "notifications banner duration 通知 横幅 停留时间 时长",
+      "Addons": "addons extensions extras store cart add remove 小组件 插件 商店 添加 移除 开关 " + host.addons.entries.map(function(addon) {
         return [addon.name, addon.description || ""].concat((addon.options || []).map(function(option) { return option.label || "" })).join(" ")
       }).join(" "),
-      "Keybinds": "keybinds keybindings keyboard shortcuts keys"
+      "Keybinds": "keybinds keybindings keyboard shortcuts keys 快捷键 按键 键盘 绑定 终端层"
     }
     var addonPage = host.addons.settingsPage(page)
     if (addonPage) terms[page] = page + " " + (addonPage.search || "")
@@ -142,7 +150,7 @@ Item {
             anchors.leftMargin: 28
             anchors.verticalCenter: parent.verticalCenter
             visible: searchInput.text === ""
-            text: "Search"
+            text: "搜索"
             color: settingsView.textMuted
             font.family: settingsView.host.theme.textFontFamily
             font.pixelSize: settingsView.host.theme.px(13)
@@ -183,7 +191,7 @@ Item {
         }
         Text {
           visible: settingsView.searchQuery !== "" && !settingsView.hasSearchResults
-          text: "No Results"
+          text: "无结果"
           color: settingsView.textMuted
           font.family: settingsView.host.theme.textFontFamily
           font.pixelSize: settingsView.host.theme.px(13)
@@ -414,7 +422,7 @@ Item {
         anchors.leftMargin: 28
         anchors.verticalCenter: parent.verticalCenter
         visible: fontInput.text === ""
-        text: "Search fonts"
+        text: "搜索字体"
         color: settingsView.textMuted
         font.family: settingsView.host.theme.textFontFamily
         font.pixelSize: settingsView.detailFontSize - 1
@@ -498,7 +506,7 @@ Item {
       Text {
         anchors.centerIn: parent
         visible: settingsView.filteredFonts.length === 0
-        text: "No fonts match"
+        text: "无匹配字体"
         color: settingsView.textMuted
         font.family: settingsView.host.theme.textFontFamily
         font.pixelSize: settingsView.detailFontSize - 2

@@ -7,10 +7,9 @@ CcTile {
   required property var todos
 
   anchors.fill: parent
-  // The tile's title stays English like the others; its count is the island's
-  // own mix of Chinese.
+  // The tile's title is the island's Chinese, like the rest of the tiles.
   icon: "\udb81\udf56"
-  title: "Tasks"
+  title: "\u5f85\u529e"
   subtitle: {
     if (todos.error !== "") return "\u8bfb\u4e0d\u5230\u6587\u4ef6"
     if (todos.open > 0) return todos.open + " \u9879\u5f85\u529e"

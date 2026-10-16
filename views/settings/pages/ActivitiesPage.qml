@@ -12,17 +12,17 @@ ColumnLayout {
   spacing: 20
 
   readonly property var activities: [
-    { kind: "media", key: "mediaPill", title: "Now Playing", description: "Track details and album artwork" },
-    { kind: "playback", key: "playbackOsd", title: "Play & Pause", description: "Show the track when playback pauses, resumes or skips" },
-    { kind: "workspace", key: "workspaceHud", title: "Workspace Indicator", description: "Show which workspace is active" },
-    { kind: "downloads", key: "downloads", title: "Downloads", description: "Show active download progress" },
-    { kind: "updates", key: "systemUpdates", title: "System Updates", description: "Show available system updates" },
-    { kind: "bluetooth", key: "bluetoothActivity", title: "Bluetooth Devices", description: "Show Bluetooth connection status" },
-    { kind: "network", key: "networkActivity", title: "Network", description: "Wi-Fi and Ethernet connection status" },
-    { kind: "battery", key: "batteryActivity", title: "Battery", description: "Charging and low battery alerts" },
-    { kind: "volume", key: "volumeHud", title: "Volume", description: "Display the current volume level" },
-    { kind: "brightness", key: "brightnessHud", title: "Brightness", description: "Display the current brightness level" },
-    { kind: "clipboard", key: "clipboard", title: "Clipboard", description: "Preview recently copied content" }
+    { kind: "media", key: "mediaPill", title: "正在播放", description: "显示曲目详情与专辑封面" },
+    { kind: "playback", key: "playbackOsd", title: "播放与暂停", description: "暂停、恢复或切歌时显示曲目" },
+    { kind: "workspace", key: "workspaceHud", title: "工作区指示", description: "显示当前所在的工作区" },
+    { kind: "downloads", key: "downloads", title: "下载", description: "显示进行中的下载进度" },
+    { kind: "updates", key: "systemUpdates", title: "系统更新", description: "显示可用的系统更新" },
+    { kind: "bluetooth", key: "bluetoothActivity", title: "蓝牙设备", description: "显示蓝牙连接状态" },
+    { kind: "network", key: "networkActivity", title: "网络", description: "显示 Wi-Fi 连接状态" },
+    { kind: "battery", key: "batteryActivity", title: "电池", description: "充电与低电量提醒" },
+    { kind: "volume", key: "volumeHud", title: "音量", description: "显示当前音量" },
+    { kind: "brightness", key: "brightnessHud", title: "亮度", description: "显示当前亮度" },
+    { kind: "clipboard", key: "clipboard", title: "剪贴板", description: "预览最近复制的内容" }
   ]
 
   GridLayout {

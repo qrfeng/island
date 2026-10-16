@@ -9,10 +9,13 @@ import QtQuick
 //           host.showFeedback("", ms, "addon:" + addon.id), or hold the
 //           resting island with it for as long as `ongoing` is set (over
 //           the media and download pills), the clock kept in its middle.
-//   views   [{ name, width, padding, component }], each opened with
+//   views   [{ name, width, padding, radius, component }], each opened with
 //           `show <name>`; its item is on screen while host.view is name.
 //           An item with surfaceWidth, surfacePadding, or surfaceRadius
 //           (corner radius) shapes the island to them as they change.
+//           A view's item is made the first time its view opens, so declare
+//           width, padding and radius here too: until it exists those are the
+//           shape the island opens at (an item's own surface* then wins).
 //   tiles   [{ key, title, wide, present, component }], control center cards.
 //           Each component's parent has `center` (the ControlCenter),
 //           `controlKey`, and `galleryPreview`, as the core cards get.

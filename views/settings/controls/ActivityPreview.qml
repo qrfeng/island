@@ -19,12 +19,12 @@ Item {
   readonly property var sample: ({
     media: { glyph: "󰝚", glyphColor: "#ffffff" },
     bluetooth: { glyph: "󰋋", glyphColor: "#ffffff" },
-    playback: { glyph: "󰏤", glyphColor: "#ffffff", label: "Song Title - Artist" },
-    clipboard: { glyph: "󰆏", label: "Hello, world!", status: "Copied", statusColor: accent },
+    playback: { glyph: "󰏤", glyphColor: "#ffffff", label: "歌曲名 - 歌手" },
+    clipboard: { glyph: "󰆏", label: "你好，世界！", status: "已复制", statusColor: accent },
     downloads: { glyph: "󰁅", glyphColor: positiveColor, label: "12:34", status: "2 MB/s", statusColor: positiveColor },
-    updates: { glyph: "󰏗", glyphColor: positiveColor, label: "12:34", status: "Updating", statusColor: positiveColor },
-    network: { glyph: "󰤨", label: "Home", status: "Connected", statusColor: accent },
-    battery: { label: "Charging", status: "64%", statusColor: positiveColor }
+    updates: { glyph: "󰏗", glyphColor: positiveColor, label: "12:34", status: "正在更新", statusColor: positiveColor },
+    network: { glyph: "󰤨", label: "家庭网络", status: "已连接", statusColor: accent },
+    battery: { label: "充电中", status: "64%", statusColor: positiveColor }
   })[kind] || ({})
   readonly property string glyph: sample.glyph || ""
 
@@ -142,12 +142,12 @@ Item {
       visible: preview.kind === "bluetooth"
       spacing: 1
       Text {
-        text: "Connected"
+        text: "已连接"
         color: "#888888"
         font.family: preview.view.host.theme.textFontFamily
         font.pixelSize: preview.view.host.theme.px(10)
       }
-      Text { text: "Headphones"; color: "#ffffff"; font.family: preview.view.host.theme.textFontFamily; font.pixelSize: preview.view.host.theme.px(12) }
+      Text { text: "耳机"; color: "#ffffff"; font.family: preview.view.host.theme.textFontFamily; font.pixelSize: preview.view.host.theme.px(12) }
     }
     Rectangle {
       anchors.right: parent.right

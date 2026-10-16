@@ -42,7 +42,7 @@ Item {
   function title(key) {
     var tile = host.addons.tileFor(key)
     if (tile) return String(tile.title || key)
-    var names = { wifi: "Wi-Fi / Ethernet", bluetooth: "Bluetooth", focus: "Focus", game: "Game Mode", night: "Night Shift", power: "Power Mode", keyboard: "Keyboard", sound: "Sound", microphone: "Microphone", microphoneMute: "Microphone", display: "Display" }
+    var names = { wifi: "网络", bluetooth: "蓝牙", focus: "勿扰", game: "游戏模式", night: "夜览", power: "电源模式", keyboard: "键盘", sound: "声音", microphone: "麦克风", microphoneMute: "麦克风", display: "显示" }
     return names[key] || key
   }
   function isShown(key) {
@@ -76,6 +76,8 @@ Item {
     return fallback
   }
   readonly property var wifiDevice: findDevice(DeviceType.Wifi)
+  // Ethernet is reported nowhere in the UI right now (2026-10-16): the network
+  // tile is Wi-Fi only. Kept so bringing it back is one line per function.
   readonly property var wiredDevice: findDevice(DeviceType.Wired)
   readonly property var wifiNetwork: {
     var nets = wifiDevice && wifiDevice.networks ? wifiDevice.networks.values : []
@@ -119,7 +121,7 @@ Item {
   readonly property bool charging: hasBattery && battery.state === UPowerDeviceState.Charging
   readonly property var profileNames: ["power-saver", "balanced", "performance"]
   readonly property string profileName: profileNames[PowerProfiles.profile] || "balanced"
-  readonly property var profileLabels: ({ "power-saver": "Power Saver", balanced: "Balanced", performance: "Performance" })
+  readonly property var profileLabels: ({ "power-saver": "节能", balanced: "平衡", performance: "性能" })
   readonly property var profileIcons: ({ "power-saver": "󰾆", balanced: "󰾅", performance: "󰓅" })
   // Through Omarchy so the choice is remembered per AC/battery, as in its menu.
   function cycleProfile() {
@@ -131,7 +133,7 @@ Item {
   // --- Keyboard layout: the main keyboard's, from Hyprland ---
   property string keyboardLayout: ""
   property int keyboardLayoutCount: 1
-  readonly property string keyboardLabel: keyboardLayout || "Unknown"
+  readonly property string keyboardLabel: keyboardLayout || "未知"
   Process {
     id: keyboardRead
     command: ["hyprctl", "devices", "-j"]
@@ -184,7 +186,7 @@ Item {
   }
   function controlIcon(key) {
     if (key === "microphoneMute") return microphoneMuted ? "󰍭" : "󰍬"
-    if (key === "wifi") return wifiDevice ? (Networking.wifiEnabled ? "\uf1eb" : "󰖪") : "󰈀"
+    if (key === "wifi") return Networking.wifiEnabled ? "\uf1eb" : "󰖪"
     if (key === "bluetooth") return btAdapter && btAdapter.enabled ? "󰂯" : "󰂲"
     if (key === "focus") return "󰍶"
     if (key === "game") return "󰊗"
@@ -192,22 +194,20 @@ Item {
     if (key === "keyboard") return "󰌌"
     return "󰖔"
   }
-  function controlTitle(key) { return key === "wifi" ? (wifiDevice ? "Wi-Fi" : "Ethernet") : title(key) }
+  function controlTitle(key) { return key === "wifi" ? "Wi-Fi" : title(key) }
   function controlSubtitle(key) {
-    if (key === "microphoneMute") return microphoneMuted ? "Muted" : "Unmuted"
-    if (key === "wifi") return wifiDevice
-      ? (!Networking.wifiEnabled ? "Off" : wifiNetwork ? wifiNetwork.name : "Not connected")
-      : (wiredDevice && wiredDevice.connected ? "Connected" : "Disconnected")
-    if (key === "bluetooth") return !btAdapter ? "Unavailable" : !btAdapter.enabled ? "Off" : btConnected ? String(btConnected.name || "Connected") : "On"
-    if (key === "focus") return dnd ? "On" : "Off"
-    if (key === "game") return gameMode ? "On" : "Off"
-    if (key === "power") return profileLabels[profileName] || "Balanced"
+    if (key === "microphoneMute") return microphoneMuted ? "已静音" : "未静音"
+    if (key === "wifi") return !Networking.wifiEnabled ? "关闭" : wifiNetwork ? wifiNetwork.name : "未连接"
+    if (key === "bluetooth") return !btAdapter ? "不可用" : !btAdapter.enabled ? "关闭" : btConnected ? String(btConnected.name || "已连接") : "开启"
+    if (key === "focus") return dnd ? "开启" : "关闭"
+    if (key === "game") return gameMode ? "开启" : "关闭"
+    if (key === "power") return profileLabels[profileName] || "平衡"
     if (key === "keyboard") return keyboardLabel
-    return nightOn ? "On" : "Off"
+    return nightOn ? "开启" : "关闭"
   }
   function controlChecked(key) {
     if (key === "microphoneMute") return microphoneMuted
-    if (key === "wifi") return wifiDevice ? Networking.wifiEnabled : !!(wiredDevice && wiredDevice.connected)
+    if (key === "wifi") return Networking.wifiEnabled
     if (key === "bluetooth") return !!(btAdapter && btAdapter.enabled)
     if (key === "focus") return dnd
     if (key === "game") return gameMode
@@ -217,12 +217,12 @@ Item {
   }
   function controlAvailable(key) {
     if (key === "microphoneMute") return microphoneReady
-    if (key === "wifi") return wifiDevice ? Networking.wifiHardwareEnabled !== false : !!wiredDevice
+    if (key === "wifi") return !!wifiDevice && Networking.wifiHardwareEnabled !== false
     if (key === "bluetooth") return !!btAdapter
     if (key === "focus") return !!notifications
     return true
   }
-  // Ethernet only reports; there's nothing to switch.
+  // With no Wi-Fi device there is nothing to switch, so the tile only reports.
   function controlClickable(key) { return key !== "wifi" || !!wifiDevice }
   function toggleControl(key) {
     if (key === "microphoneMute") { toggleMicrophoneMute(); return }
