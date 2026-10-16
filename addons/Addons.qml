@@ -162,6 +162,23 @@ Item {
             { label: "关闭", value: "Off" }, { label: "7天后", value: "After 7 days" },
             { label: "30天后", value: "After 30 days" }, { label: "90天后", value: "After 90 days" }] }
       ] },
+    { id: "missions", name: "Mission", icon: "\u25ce", color: "#ff9f0a", default: false,
+      source: "missions/MissionsAddon.qml",
+      // A target with a ring around it: work that outlives the session that started it.
+      iconLayers: [
+        { rect: true, color: "#1c1c1e", x: 0.5, y: 0.5, width: 0.94, height: 0.94, radius: 0.26 },
+        { glyph: "◎", color: "#ff9f0a", x: 0.5, y: 0.5, size: 0.46 },
+        { glyph: "󰄬", color: "#ffffff", opacity: 0.85, x: 0.74, y: 0.72, size: 0.26 }
+      ],
+      description: "pi-subagents 的 durable 记录：状态、等回答、token（只读）",
+      options: [
+        { key: "path", label: "记录目录", detail: "pi-subagents 写 mission 的地方",
+          type: "text", default: "~/.pi/agent/missions", placeholder: "~/.pi/agent/missions" },
+        { key: "done", label: "已收口的", detail: "继续列多久以内的完成/失败项",
+          type: "popup", default: "Last 7 days", choices: [
+            { label: "不显示", value: "Hide" }, { label: "最近7天", value: "Last 7 days" },
+            { label: "最近30天", value: "Last 30 days" }, { label: "一直显示", value: "Always" }] }
+      ] },
     { id: "inputmethod", name: "输入法", icon: "󰍛", color: "#5ac8fa", default: true,
       source: "inputmethod/InputMethodAddon.qml",
       // The key the user is actually pressing: a keycap, and the letter on it.
