@@ -33,7 +33,7 @@ Addon {
     id: sampler
     running: stats.sampling && !stats.resting
     onExited: if (stats.sampling && !stats.resting) { stats.resting = true; rest.restart() }
-    command: ["python3", decodeURIComponent(String(Qt.resolvedUrl("sampler.py")).replace("file://", ""))]
+    command: ["python3", host.addons.path(Qt.resolvedUrl("sampler.py"))]
     stdout: SplitParser { onRead: function(line) { stats.take(line) } }
   }
 

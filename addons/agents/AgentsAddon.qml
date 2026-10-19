@@ -115,7 +115,7 @@ Addon {
   }
 
   readonly property string scriptPath:
-    decodeURIComponent(String(Qt.resolvedUrl("collector.py")).replace("file://", ""))
+    host.addons.path(Qt.resolvedUrl("collector.py"))
 
   Process {
     id: reader

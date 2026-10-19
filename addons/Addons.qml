@@ -303,7 +303,7 @@ Item {
       function load() {
         if (!wanted) { source = ""; return }
         var e = modelData
-        slot.setSource(Qt.resolvedUrl(e.source), {
+        slot.setSource(addons.url(Qt.resolvedUrl(e.source)), {
           host: addons.host,
           addon: {
             id: e.id, name: e.name,
@@ -314,6 +314,25 @@ Item {
       }
       onItemChanged: addons.collect()
     }
+  }
+
+  // Quickshell 0.3.2 serves this plugin's tree through its own `qs:` VFS, and a
+  // file *loaded at runtime* with such a URL compiles with its own file name
+  // taken as its directory: every relative import inside it then misses, and
+  // the addon loads as an empty item ("WeatherView is not a type"). Compiling
+  // the same file from a plain `file:` URL resolves them normally, so the URLs
+  // handed to Loader.setSource are normalized here.
+  function url(u) {
+    var s = String(u)
+    return s.indexOf("qs:") === 0 ? "file:" + s.replace(/^qs:\/\/?/, "") : s
+  }
+
+  // A `qs:`/`file:` URL as the path on disk it names, for spawning processes.
+  function path(u) {
+    var s = String(u)
+    var m = s.match(/^[a-zA-Z][a-zA-Z0-9+.\-]*:\/\/?/)
+    if (m) s = s.slice(m[0].length)
+    return decodeURIComponent(s)
   }
 
   // An enabled addon's root by id, or null.

@@ -58,7 +58,7 @@ Addon {
   function setGrouped(on) { addon.setOption("group", on ? "By project" : "Off") }
 
   readonly property string script:
-    decodeURIComponent(String(Qt.resolvedUrl("todos.py")).replace("file://", ""))
+    host.addons.path(Qt.resolvedUrl("todos.py"))
 
   // ---------- the list ----------
 

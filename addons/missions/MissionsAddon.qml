@@ -52,7 +52,7 @@ Addon {
     return own === undefined ? 7 : own
   }
   readonly property string script:
-    decodeURIComponent(String(Qt.resolvedUrl("missions.py")).replace("file://", ""))
+    host.addons.path(Qt.resolvedUrl("missions.py"))
 
   // ---------- the list ----------
 

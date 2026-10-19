@@ -14,7 +14,9 @@ import Quickshell.Io
 Item {
   id: setup
   required property string home
-  readonly property string pluginDir: String(Qt.resolvedUrl("..")).replace(/^file:\/\//, "").replace(/\/$/, "")
+  // Stripped of whatever scheme the shell's VFS served this file under (`file:`,
+  // or `qs:` since Quickshell 0.3.2), as the companion scripts are spawned by path.
+  readonly property string pluginDir: String(Qt.resolvedUrl("..")).replace(/^[a-zA-Z][a-zA-Z0-9+.\-]*:\/\/?/, "").replace(/\/$/, "")
   readonly property string companionDir: pluginDir + "/companion"
   readonly property string menuPath: home + "/.config/omarchy/extensions/omarchy-menu.jsonc"
   readonly property string stateDir: (Quickshell.env("XDG_STATE_HOME") || home + "/.local/state") + "/omarchy"

@@ -241,7 +241,9 @@ Item {
               Component.onCompleted: load()
               function load() {
                 if (!shown) { source = ""; return }
-                setSource(modelData.source, Object.assign({ view: settingsView }, modelData.properties || {}))
+                // `modelData.source` is built in the addon's own file, so it
+                // carries the VFS `qs:` scheme; see Addons.qml's `url`.
+                setSource(settingsView.host.addons.url(modelData.source), Object.assign({ view: settingsView }, modelData.properties || {}))
               }
               Binding { target: addonPage.item; property: "shown"; value: addonPage.shown && settingsView.active; when: addonPage.item !== null }
             }
