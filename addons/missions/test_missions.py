@@ -50,6 +50,16 @@ def make_store(folder, records):
     return store
 
 
+def write_state(store, project, mission_id, values):
+    """A mission's durable state sits in a directory beside its record."""
+    path = os.path.join(store, "projects", project, mission_id)
+    os.makedirs(path, exist_ok=True)
+    full = os.path.join(path, "state.json")
+    with open(full, "w", encoding="utf-8") as handle:
+        handle.write(json.dumps(values))
+    return full
+
+
 class Snapshot(unittest.TestCase):
     def test_readable_mission_gets_island_labels(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -69,6 +79,55 @@ class Snapshot(unittest.TestCase):
             self.assertEqual((row["label"], row["tone"]), ("等你回答", "urgent"))
             self.assertEqual(row["openDecisions"], ["用哪个刷新窗口"])
             self.assertEqual((row["tokens"], row["runs"]), (2000, 2))
+
+    def test_a_durable_state_is_previewed_not_dumped(self):
+        with tempfile.TemporaryDirectory() as folder:
+            store = make_store(folder, [{"id": "one", "title": "长跑"}])
+            self.assertEqual(missions.snapshot(store, done_days=7)["missions"][0]["state"], {})
+            write_state(store, "00", "one", {
+                "zebra": "x" * 200, "alpha": "等 CI 跑完", "beta": [1, 2, 3],
+                "gamma": {"k": 1}, "delta": 7})
+            state = missions.snapshot(store, done_days=7)["missions"][0]["state"]
+            self.assertEqual(state["count"], 5)
+            self.assertGreater(state["bytes"], 0)
+            self.assertTrue(state["updatedAt"].endswith("Z"))
+            # Keyed order, a scalar shown as-is, a container counted, and the
+            # island only ever gets the first few.
+            self.assertEqual(state["entries"], [
+                {"key": "alpha", "value": "等 CI 跑完"},
+                {"key": "beta", "value": "3 项"},
+                {"key": "delta", "value": "7"}])
+            self.assertEqual(len(state["entries"]), missions.STATE_KEYS_SHOWN)
+
+    def test_a_long_state_value_is_cut_to_one_line(self):
+        shown = missions.state_preview("  a\n  " + "b" * 400)
+        self.assertEqual(len(shown), missions.STATE_VALUE_CHARS)
+        self.assertTrue(shown.endswith("…"))
+        self.assertFalse("\n" in shown)
+
+    def test_runs_are_named_from_the_last_ones(self):
+        with tempfile.TemporaryDirectory() as folder:
+            runs = [{"runId": "r%d" % n, "agent": "worker", "status": "complete",
+                     "usage": {"totalTokens": 100 * n}} for n in range(1, 6)]
+            store = make_store(folder, [{"id": "one", "runs": runs}])
+            row = missions.snapshot(store, done_days=7)["missions"][0]
+            self.assertEqual((row["runs"], row["tokens"]), (5, 1500))
+            self.assertEqual([r["id"] for r in row["runList"]], ["r3", "r4", "r5"])
+            self.assertEqual(row["runList"][-1], {
+                "id": "r5", "agent": "worker", "status": "complete",
+                "tokens": 500, "completedAt": ""})
+
+    def test_an_open_decision_carries_the_id_the_agent_needs(self):
+        with tempfile.TemporaryDirectory() as folder:
+            store = make_store(folder, [{
+                "id": "one",
+                "ownerSessionId": "/home/tester/.pi/agent/sessions/x/y.jsonl",
+                "decisions": [{"id": "d1", "status": "open", "title": "开不开 goal"},
+                              {"id": "d2", "status": "resolved"}]}])
+            row = missions.snapshot(store, done_days=7)["missions"][0]
+            self.assertEqual(row["openDecisionIds"], ["d1"])
+            self.assertEqual(row["ownerSessionId"],
+                             "/home/tester/.pi/agent/sessions/x/y.jsonl")
 
     def test_index_pointing_at_a_removed_record_is_reported(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -182,6 +241,35 @@ class Cli(unittest.TestCase):
             # Nothing written since, so the pipe must still be empty.
             ready, _, _ = select.select([watch.stdout], [], [], 1.0)
             self.assertEqual(ready, [])
+
+    def test_watch_wakes_on_a_state_write(self):
+        """`mission.state.set` rewrites only state.json, and the panel must follow."""
+        with tempfile.TemporaryDirectory() as folder:
+            store = make_store(folder, [{"id": "one"}])
+            before = missions.fingerprint(store)
+            write_state(store, "00", "one", {"phase": "implement"})
+            self.assertNotEqual(missions.fingerprint(store), before)
+            watch = subprocess.Popen([sys.executable, CLI, "--dir", store,
+                                      "watch", "--interval", "0.2"],
+                                     stdout=subprocess.PIPE, text=True)
+            self.addCleanup(watch.kill)
+            json.loads(watch.stdout.readline())
+            write_state(store, "00", "one", {"phase": "verify"})
+            second = json.loads(watch.stdout.readline())
+            self.assertEqual(second["missions"][0]["state"]["entries"],
+                             [{"key": "phase", "value": "verify"}])
+
+    def test_list_carries_the_state_and_the_handoff_handles(self):
+        with tempfile.TemporaryDirectory() as folder:
+            store = make_store(folder, [{"id": "one", "title": "长跑",
+                                         "ownerSessionId": "/s/y.jsonl"}])
+            write_state(store, "00", "one", {"next": "跑集成测试"})
+            out = subprocess.run([sys.executable, CLI, "--dir", store, "list"],
+                                 capture_output=True, text=True, check=True)
+            row = json.loads(out.stdout)["missions"][0]
+            self.assertEqual(row["state"]["entries"],
+                             [{"key": "next", "value": "跑集成测试"}])
+            self.assertEqual(row["ownerSessionId"], "/s/y.jsonl")
 
 
 if __name__ == "__main__":

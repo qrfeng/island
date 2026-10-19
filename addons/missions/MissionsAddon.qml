@@ -144,6 +144,112 @@ Addon {
     }
   }
 
+  // ---------- handing the work back to pi ----------
+
+  // Nothing here edits a record. pi-subagents owns that store, the index that
+  // points into it and the retention sweep that prunes both, and it takes writes
+  // only through its own tool (`mission.resolve-decision`, `mission.close`,
+  // `mission.update`) - there is no CLI for them, `bin` is just the installer. So
+  // a click prepares the exact ask and hands it over; the agent is what writes.
+  property string note: ""
+  function say(text) {
+    note = String(text || "")
+    noteFade.restart()
+  }
+  Timer {
+    id: noteFade
+    interval: 2600
+    onTriggered: missionBoard.note = ""
+  }
+
+  // A record's title can be `[prompt redacted]`, so the ask quotes ids: those are
+  // the only handles that survive every path a mission took to get here.
+  function askFor(m) {
+    var id = String(m && m.id || "")
+    if (id === "") return ""
+    var ids = (m && m.openDecisionIds) || []
+    if (ids.length > 0) {
+      return "用 mission.resolve-decision 回答 mission " + id + " 的 decision "
+        + String(ids[0]) + "，并把结论写回那条记录。"
+    }
+    var title = String(m && m.title || "")
+    return "用 mission.close 收口 mission " + id + (title !== "" ? "（" + title + "）" : "")
+      + "，收口前先用 mission.show 对一遍 objective。"
+  }
+  function handoff(m) {
+    var ask = missionBoard.askFor(m)
+    if (ask === "") return
+    Quickshell.clipboardText = ask
+    var what = ((m && m.openDecisionIds) || []).length > 0
+      ? "回答那条 decision" : "收口这条 mission"
+    missionBoard.say("已复制指令 · 粘给 pi 就能" + what)
+  }
+
+  // ---------- the pane that owns it ----------
+
+  // `ownerSessionId` is a pi session file path, which is exactly what
+  // `herdr agent list` calls that pane's `agent_session.value` - so the jump
+  // needs no session parsing, just one lookup. Asked on click only: it is a 4ms
+  // command, but a mission list is no reason to poll herdr in the background.
+  property string herdr: ""
+  Process {
+    id: herdrFinder
+    command: ["sh", "-c", "command -v herdr 2>/dev/null || true"]
+    stdout: StdioCollector {
+      waitForEnd: true
+      onStreamFinished: {
+        var path = String(text).trim()
+        missionBoard.herdr = path.indexOf("/") === 0 ? path : ""
+      }
+    }
+    Component.onCompleted: running = true
+  }
+
+  property string jumpFor: ""
+  Process {
+    id: paneLookup
+    command: [missionBoard.herdr, "agent", "list"]
+    stdout: StdioCollector { id: paneOut; waitForEnd: true }
+    onExited: missionBoard.paneFound(String(paneOut.text || ""))
+  }
+  Process { id: focusProc }
+
+  function jump(m) {
+    var session = String(m && m.ownerSessionId || "")
+    if (session === "") { missionBoard.say("这条 mission 没记会话"); return }
+    if (missionBoard.herdr === "") { missionBoard.say("这台机器上没有 herdr"); return }
+    if (paneLookup.running) return
+    missionBoard.jumpFor = session
+    paneLookup.running = true
+  }
+
+  function paneFound(line) {
+    var session = missionBoard.jumpFor
+    missionBoard.jumpFor = ""
+    var pane = ""
+    try {
+      var agents = (JSON.parse(line).result || {}).agents || []
+      for (var i = 0; i < agents.length; ++i) {
+        var owned = agents[i].agent_session || {}
+        if (String(owned.value || "") !== session) continue
+        pane = String(agents[i].pane_id || "")
+        break
+      }
+    } catch (e) {
+      pane = ""
+    }
+    if (pane === "") {
+      missionBoard.say("herdr 里没在跑这个会话，多半已经结束了")
+      return
+    }
+    // Out of the way: the point is the agent's pane, not the island. herdr answers
+    // over its own socket, so the pane comes forward even though the island had
+    // the keyboard.
+    missionBoard.host.view = "rest"
+    focusProc.command = [missionBoard.herdr, "agent", "focus", pane]
+    focusProc.running = true
+  }
+
   // A settings change is a new document, so re-read rather than show the old one.
   function reread() {
     missionBoard.failed = false

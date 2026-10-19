@@ -1,4 +1,5 @@
 import QtQuick
+import "../../components"
 
 // The mission list: one card per durable record, the ones waiting on a person
 // already standing out by colour. `board` is the MissionsAddon, which holds the
@@ -7,6 +8,10 @@ import QtQuick
 // Rows lead with the project directory on purpose: a mission auto-created from a
 // prompt stores `[prompt redacted]` as its title, so the title is not always
 // something a person can read - the directory is.
+//
+// The chips at the bottom of a card start nothing: pi-subagents owns these
+// records, so they copy the exact ask (with ids) or jump to the pane that owns
+// the mission. The agent is what writes.
 Column {
   id: panel
   required property var host
@@ -105,6 +110,30 @@ Column {
           font.pixelSize: theme.px(11)
         }
 
+        // What the runs actually cost, newest last: a mission that looks idle at
+        // the top has often spent a long stretch getting there.
+        Text {
+          width: parent.width
+          visible: text !== ""
+          text: panel.runsText(card.mission)
+          color: panel.theme.muted
+          font.family: theme.textFontFamily
+          font.pixelSize: theme.px(11)
+          wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+        }
+
+        // The durable state the agents keep for themselves (`mission.state.set`):
+        // a few keys as a preview, and how much more sits behind them.
+        Text {
+          width: parent.width
+          visible: text !== ""
+          text: panel.stateText(card.mission)
+          color: panel.theme.muted
+          font.family: theme.textFontFamily
+          font.pixelSize: theme.px(11)
+          wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+        }
+
         // An open decision gates the mission, so it is the one line worth reading
         // in full; there is rarely more than one.
         Repeater {
@@ -120,15 +149,48 @@ Column {
           }
         }
 
-        // Say so rather than let the red line look like a button that does nothing.
-        Text {
-          width: parent.width
-          visible: card.gated
-          text: "回答得在 pi 里跑 mission.resolve-decision —— 岛里目前只能看。"
-          color: panel.theme.muted
-          font.family: theme.textFontFamily
-          font.pixelSize: theme.px(11)
-          wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+        Item {
+          width: 1
+          height: theme.px(5)
+          visible: chipModel.count > 0
+        }
+
+        // The hand-off. Answering or closing has to be written by the agent, so a
+        // chip either carries the ask to the clipboard or takes you to the pane
+        // that owns the mission - and the note below says which happened.
+        Row {
+          visible: chipModel.count > 0
+          spacing: theme.px(6)
+          Repeater {
+            id: chipModel
+            model: panel.actions(card.mission)
+            Rectangle {
+              required property var modelData
+              readonly property bool held: chipTouch.pressed
+              width: chipLabel.implicitWidth + theme.px(16)
+              height: theme.px(21)
+              radius: height / 2
+              color: theme.withAlpha(card.ink, held ? 0.26 : 0.12)
+              border.color: theme.withAlpha(card.ink, 0.4)
+              border.width: 1
+              Behavior on color { MotionColorAnimation { theme: panel.theme } }
+
+              Text {
+                id: chipLabel
+                anchors.centerIn: parent
+                text: String(modelData.label)
+                color: card.ink
+                font.family: theme.textFontFamily
+                font.pixelSize: theme.px(11)
+              }
+              HoverHandler { id: chipTouch }
+              MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: panel.act(String(modelData.key), card.mission)
+              }
+            }
+          }
         }
       }
     }
@@ -171,6 +233,17 @@ Column {
     wrapMode: Text.WrapAtWordBoundaryOrAnywhere
   }
 
+  // What the addon did with a click, kept for a moment under the cards.
+  Text {
+    width: panel.width
+    visible: panel.board.note !== ""
+    text: panel.board.note
+    color: panel.theme.accent
+    font.family: panel.theme.textFontFamily
+    font.pixelSize: panel.theme.px(11)
+    wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+  }
+
   function detail(m) {
     var bits = []
     var runs = Number(m.runs) || 0
@@ -183,6 +256,52 @@ Column {
     if (when !== "") bits.push(when)
     if (m.stale === true) bits.push("记录已清")
     return bits.join(" · ")
+  }
+
+  function runsText(m) {
+    var list = m.runList || []
+    if (list.length === 0) return ""
+    var bits = []
+    for (var i = 0; i < list.length; ++i) {
+      var run = list[i]
+      var name = String(run.agent || "run")
+      var status = String(run.status || "")
+      var tokens = Number(run.tokens) || 0
+      bits.push(name + (status !== "" ? " " + status : "")
+        + (tokens > 0 ? " " + ago.tokens(tokens) : ""))
+    }
+    var more = (Number(m.runs) || 0) - list.length
+    return "运行：" + bits.join(" · ") + (more > 0 ? "（共 " + m.runs + " 次）" : "")
+  }
+
+  function stateText(m) {
+    var state = m.state
+    if (!state || !(state.entries || []).length) return ""
+    var bits = []
+    for (var i = 0; i < state.entries.length; ++i) {
+      bits.push(state.entries[i].key + "=" + state.entries[i].value)
+    }
+    var more = (Number(state.count) || 0) - state.entries.length
+    return "durable：" + bits.join(" · ") + (more > 0 ? "（还有 " + more + " 个键）" : "")
+  }
+
+  // Which hand-off a card offers: the ask it still needs, and the pane it came from.
+  function actions(m) {
+    var out = []
+    if (m && String(m.id || "") !== "") {
+      out.push((m.openDecisionIds || []).length > 0
+        ? { key: "answer", label: "复制回答指令" }
+        : { key: "close", label: "复制收口指令" })
+    }
+    if (m && String(m.ownerSessionId || "") !== "") {
+      out.push({ key: "jump", label: "跳到会话" })
+    }
+    return out
+  }
+
+  function act(key, m) {
+    if (key === "jump") panel.board.jump(m)
+    else panel.board.handoff(m)
   }
 
   // Age and token formatting, shared by the rows.

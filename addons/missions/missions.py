@@ -8,9 +8,10 @@ thin pointer index under `~/.pi/agent/missions/index/<sha>.json` holding
 
 This script never writes anything. It reads the index (one small file per
 mission, so the common case stays cheap), joins in each record for the parts the
-index lacks - open decisions, run/token totals, labels - and prints the whole
-list as a single line of JSON, which is what `watch` reprints whenever any file
-under the store changes. One line per snapshot keeps the QML side to a single
+index lacks - open decisions, run/token totals, labels, the mission's durable
+state - and prints the whole list as a single line of JSON, which is what
+`watch` reprints whenever any file under the store changes (the state file lives
+in the store too, so a `mission.state.set` wakes it like any other change). One line per snapshot keeps the QML side to a single
 `JSON.parse`.
 
 A record that the index still points at but that no longer exists is reported as
@@ -77,18 +78,102 @@ def index_entries(store):
     return entries
 
 
+def run_tokens(run):
+    """One run's token total, whichever key the record happened to use."""
+    usage = run.get("usage")
+    if not isinstance(usage, dict):
+        return 0
+    for key in ("totalTokens", "tokens", "total"):
+        value = usage.get(key)
+        if isinstance(value, (int, float)):
+            return int(value)
+    return 0
+
+
 def token_total(record):
     """Sum of the per-run token totals, when the record carries them."""
-    total = 0
-    for run in record.get("runs") or []:
-        usage = run.get("usage")
-        if isinstance(usage, dict):
-            for key in ("totalTokens", "tokens", "total"):
-                value = usage.get(key)
-                if isinstance(value, (int, float)):
-                    total += int(value)
-                    break
-    return total
+    return sum(run_tokens(run) for run in (record.get("runs") or [])
+               if isinstance(run, dict))
+
+
+def run_list(record, keep=3):
+    """The last few runs, oldest first: what the card wants to name out loud.
+
+    A mission can carry dozens of runs after a long goal-mode stretch, and the
+    card is a glance, not a log - `mission.show` in pi is the full one.
+    """
+    out = []
+    for run in (record.get("runs") or [])[-keep:]:
+        if not isinstance(run, dict):
+            continue
+        out.append({
+            "id": str(run.get("runId") or ""),
+            "agent": str(run.get("agent") or ""),
+            "status": str(run.get("status") or ""),
+            "tokens": run_tokens(run),
+            "completedAt": str(run.get("completedAt") or ""),
+        })
+    return out
+
+
+# A mission's durable state is the flat {key: value} map the child agents write
+# with `mission.state.set`, capped at 256 KiB (MISSION_STATE_MAX_BYTES in
+# pi-subagents' src/missions/workflow-state.js). The island previews a few keys;
+# the whole map stays one `mission.show` away.
+STATE_KEYS_SHOWN = 3
+STATE_VALUE_CHARS = 80
+
+
+def state_path(record_path):
+    """`projects/<hash>/<id>.json` -> `projects/<hash>/<id>/state.json`.
+
+    Derived from the record path the index hands us rather than re-derived from
+    the project root: pi-subagents keeps the state directory beside the record
+    (`missionStatePath`), and hashing the root again would only add a way to
+    disagree with it.
+    """
+    if not record_path:
+        return ""
+    return os.path.join(os.path.splitext(str(record_path))[0], "state.json")
+
+
+def state_preview(value):
+    """One scannable line; a nested value is counted, not dumped onto the island."""
+    if isinstance(value, str):
+        text = " ".join(value.split())
+    elif value is None or isinstance(value, (bool, int, float)):
+        text = json.dumps(value)
+    elif isinstance(value, (list, dict, tuple)):
+        text = "%d 项" % len(value)
+    else:
+        text = ""
+    if len(text) > STATE_VALUE_CHARS:
+        text = text[: STATE_VALUE_CHARS - 1].rstrip() + "…"
+    return text
+
+
+def state_summary(path):
+    """{count, bytes, updatedAt, entries:[{key,value}]}, or {} when there is none.
+
+    Most missions never write state at all, so "no state" is the normal answer
+    rather than a problem - hence an empty dict instead of a zero count.
+    """
+    doc = read_json(path) if path else None
+    if not isinstance(doc, dict) or not doc:
+        return {}
+    try:
+        info = os.stat(path)
+        size, stamp = info.st_size, time.strftime(
+            "%Y-%m-%dT%H:%M:%SZ", time.gmtime(info.st_mtime))
+    except OSError:
+        size, stamp = 0, ""
+    entries = []
+    for key in sorted(str(k) for k in doc):
+        text = state_preview(doc[key])
+        if text != "":
+            entries.append({"key": key, "value": text})
+    return {"count": len(doc), "bytes": size, "updatedAt": stamp,
+            "entries": entries[:STATE_KEYS_SHOWN]}
 
 
 def project_name(project_root):
@@ -119,11 +204,16 @@ def snapshot(store, done_days=7, limit=40):
         # can lag a beat behind, so prefer it and fall back for a missing record.
         status = str(record.get("status") or entry.get("status") or "")
         updated = str(record.get("updatedAt") or entry.get("updatedAt") or "")
-        open_questions = [
-            str(item.get("title") or item.get("id") or "")
-            for item in (record.get("decisions") or [])
-            if str(item.get("status") or "open") == "open"
-        ]
+        open_questions, open_ids = [], []
+        for item in (record.get("decisions") or []):
+            if not isinstance(item, dict):
+                continue
+            if str(item.get("status") or "open") != "open":
+                continue
+            open_questions.append(str(item.get("title") or item.get("id") or ""))
+            # The id is the only handle that survives a redacted title, and it is
+            # what `mission.resolve-decision` asks for.
+            open_ids.append(str(item.get("id") or ""))
         if status in TERMINAL and horizon is not None:
             try:
                 seen = time.mktime(time.strptime(updated[:19], "%Y-%m-%dT%H:%M:%S"))
@@ -146,6 +236,13 @@ def snapshot(store, done_days=7, limit=40):
             "runs": len(record.get("runs") or []),
             "children": len(record.get("workflowChildren") or []),
             "tokens": token_total(record),
+            "runList": run_list(record),
+            "state": state_summary(state_path(path)),
+            # A pi session file path - the same string `herdr agent list` reports
+            # as that pane's `agent_session.value`, which is how the view offers a
+            # jump without parsing session logs.
+            "ownerSessionId": str(record.get("ownerSessionId") or ""),
+            "openDecisionIds": open_ids,
             "labels": [str(x) for x in (record.get("labels") or [])],
             "summary": str(record.get("summary") or ""),
             "stale": not record,
