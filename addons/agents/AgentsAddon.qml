@@ -170,6 +170,10 @@ Addon {
   // so instead of showing an empty board. Probed by shell because this Qt has
   // no Qt.file (same reason as InputMethodAddon).
   property string herdr: ""
+  // 盘上的 herdr 二进制比在跑的 server 新时的一句话（空串 = 没事）。herdr 升完
+  // 自己不提示，而插件会按各自的 min_herdr_version 静默被闸（岛的事件戳 companion
+  // 首当其冲），所以得有人说出来。见 board.js 的 parseStatus。
+  property string herdrStale: ""
   readonly property bool boardReady: herdr !== "" && boardFetchedAt > 0
   readonly property string boardSummary: Board.summary(boardList, boardFlags)
   // 磁贴上的红点：等你处理的 + 跑完了你还没回去看的。
@@ -306,6 +310,25 @@ Addon {
     onTextChanged: agentUsage.refreshBoard(true)
   }
 
+  // 一次 `herdr status --json` 问出两件事：server 在跑什么版本、盘上装的是什么
+  // 版本。版本只在升级那天会变，所以一分钟一次足够（它只走一次 socket）。
+  function refreshStatus() {
+    if (agentUsage.herdr === "" || statusProc.running) return
+    statusProc.command = [agentUsage.herdr, "status", "--json"]
+    statusProc.running = true
+  }
+  Process {
+    id: statusProc
+    stdout: StdioCollector { id: statusOut; waitForEnd: true }
+    onExited: function(code) {
+      // 问不成就算没事：看板上不该多出一条说不清的错。
+      if (code !== 0) { agentUsage.herdrStale = ""; return }
+      var s = Board.parseStatus(String(statusOut.text || ""))
+      agentUsage.herdrStale = s.stale
+        ? "herdr 需重启：server " + s.server + " → 盘上 " + s.client : ""
+    }
+  }
+
   // 分支：把板子上出现的目录一次性交给一个 shell 循环问完（不是每个目录起一个进程），
   // 并且只在目录集合真的变了那天再问一次——所以板子开着还是关着都无所谓。
   function refreshBranches() {
@@ -359,5 +382,13 @@ Addon {
     running: agentUsage.herdr !== "" && agentUsage.host.view === "sessions"
     triggeredOnStart: false
     onTriggered: agentUsage.refreshBoard(true)
+  }
+  // herdr 自身的版本差：一分钟一次，启动时立刻问一次（`herdr` 路径到位就开始了）。
+  Timer {
+    interval: 60000
+    repeat: true
+    running: agentUsage.herdr !== ""
+    triggeredOnStart: true
+    onTriggered: agentUsage.refreshStatus()
   }
 }

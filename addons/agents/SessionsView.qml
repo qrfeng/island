@@ -12,9 +12,11 @@ ListPicker {
   readonly property var theme: board.host.theme
 
   placeholder: "搜索会话（名称 / 目录 / 窗格）"
-  hint: usage.boardSummary !== ""
-    ? usage.boardSummary + " · Enter 跳过去 · R 读输出"
-    : "Enter 跳过去 · R 读输出"
+  // 盘上装了新 herdr 而 server 还旧时，插件会静默失灵（事件戳一断，看板就只好靠
+  // 定时轮询），所以这句排在最前头。
+  hint: [usage.herdrStale, usage.boardSummary]
+    .filter(function(part) { return part !== "" })
+    .concat("Enter 跳过去 · R 读输出").join(" · ")
   emptyText: usage.herdr === ""
     // Nothing to ask: say what would make this view say something.
     ? "没有 herdr，所以看不到会话。在 herdr 里跑起 agent 再开一次。"

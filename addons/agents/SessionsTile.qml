@@ -17,7 +17,10 @@ CcTile {
   checked: usage.boardWaiting > 0
   title: usage.herdr === "" ? "Agent 会话"
     : usage.boardWaiting > 0 ? String(usage.boardWaiting) + " 个 agent 等你" : "Agent 会话"
+  // 盘上装了新 herdr 而 server 还旧 = 插件静默被闸，值得在磁贴上一眼看见；
+  // 具体版本差到看板里看（那里空间大）。
   subtitle: usage.herdr === "" ? "未安装 herdr"
-    : usage.boardSummary !== "" ? usage.boardSummary : "没有会话"
+    : usage.herdrStale !== "" ? "herdr 需重启"
+      : usage.boardSummary !== "" ? usage.boardSummary : "没有会话"
   onClicked: usage.host.view = "sessions"
 }

@@ -10,7 +10,7 @@ import { execFileSync } from "node:child_process"
 const src = fs.readFileSync(new URL("./board.js", import.meta.url), "utf8")
 const board = new Function(`${src}
 ; return { parseList, rows, counts, summary, cwdTail, statusLabel, statusTone, rowOf,
-    annotate, items, seenUpdate, markSeen }`)()
+    annotate, items, seenUpdate, markSeen, parseStatus }`)()
 
 const agent = (over = {}) => ({
   agent: "pi", agent_status: "idle", cwd: "/home/q/me/work/api", display_agent: "",
@@ -127,8 +127,6 @@ if (live === null) {
   console.log(`– live: ${parsed.length} agent(s), summary "${board.summary(parsed)}"`)
 }
 
-console.log("board.js ok")
-
 // ---------- 「等你看」标记 ----------
 const R = (o) => board.rows([agent(o)])[0]
 const solo = (o) => board.rows([agent(o)])   // seenUpdate 吃的是 rowOf 之后的行
@@ -195,3 +193,25 @@ const filtered = board.items(grouped, "alpha")
 assert.deepEqual(filtered.map(r => (r.header ? "#" : r.key)), ["w1:p1", "w1:p2"])
 // 只剩一个项目时不该有标题
 assert.deepEqual(board.items(grouped, "beta").map(r => r.key), ["w1:p3"])
+
+// ---------- parseStatus：盘上的 herdr 比在跑的 server 新 ----------
+const status = (over = {}) => JSON.stringify({
+  client: { version: "0.9.3" },
+  server: { running: true, version: "0.9.1", server_binary_stale: false },
+  update: { restart_needed: false, server_binary_stale: false }, ...over
+})
+assert.deepEqual(board.parseStatus(""), { stale: false, client: "", server: "" })
+assert.deepEqual(board.parseStatus("not json"), { stale: false, client: "", server: "" })
+assert.deepEqual(board.parseStatus("null"), { stale: false, client: "", server: "" })
+assert.deepEqual(board.parseStatus(status()), { stale: false, client: "0.9.3", server: "0.9.1" })
+// 两处都得认：`update.server_binary_stale` 与 `server.server_binary_stale`
+assert.equal(board.parseStatus(status({ update: { server_binary_stale: true } })).stale, true)
+assert.equal(board.parseStatus(status({
+  server: { running: true, version: "0.9.1", server_binary_stale: true } })).stale, true)
+// server 没在跑 ⇒ 没有旧进程卡着，不该说「需重启」（但版本要报得出来）
+assert.deepEqual(board.parseStatus(status({ server: { running: false } })),
+  { stale: false, client: "0.9.3", server: "" })
+// 字段缺了也不抛
+assert.deepEqual(board.parseStatus('{"client":{}}'), { stale: false, client: "", server: "" })
+
+console.log("board.js ok")

@@ -237,3 +237,23 @@ function summary(agents, flags) {
   if (!parts.length && at.total) parts.push(at.total + " 个空闲")
   return parts.join(" · ")
 }
+
+// `herdr status --json` 里那句 `server_binary_stale`：盘上的二进制比在跑的
+// server 新。pacman/AUR 升完 herdr 时 herdr 自己不发一声，而插件各自按
+// min_herdr_version 被挡下（岛的事件戳 companion 就是这么瞎的），所以这里替它
+// 说出来。server 没在跑时不算「需重启」——那时根本没有旧进程卡着。
+function parseStatus(text) {
+  var none = { stale: false, client: "", server: "" }
+  var data
+  try { data = JSON.parse(String(text || "")) } catch (e) { return none }
+  if (!data || typeof data !== "object") return none
+  var client = data.client ? String(data.client.version || "") : ""
+  var server = data.server
+  if (!server || server.running !== true) return { stale: false, client: client, server: "" }
+  var upd = data.update || {}
+  return {
+    stale: upd.server_binary_stale === true || server.server_binary_stale === true,
+    client: client,
+    server: String(server.version || "")
+  }
+}
