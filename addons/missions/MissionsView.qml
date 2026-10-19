@@ -42,8 +42,9 @@ Column {
 
       // The status colour is the whole point of the card: an open decision should
       // not look like a mission that is quietly finishing.
+      readonly property bool gated: (mission.openDecisions || []).length > 0
       readonly property string tone: String(mission.tone || "")
-      readonly property color ink: tone === "urgent" ? theme.urgent
+      readonly property color ink: gated || tone === "urgent" ? theme.urgent
         : tone === "accent" ? theme.accent : theme.muted
 
       Column {
@@ -66,7 +67,10 @@ Column {
           }
           Text {
             id: status
-            text: String(card.mission.label || "")
+            // A mission can be waiting on you while its lifecycle status still reads
+            // 待启动, which is how the tile and the list used to disagree.
+            text: String(card.mission.label || "") + (card.gated && card.mission.status !== "needs_decision"
+              ? " · 等你回答" : "")
             color: card.ink
             font.family: theme.textFontFamily
             font.pixelSize: theme.px(11)
@@ -115,6 +119,17 @@ Column {
             wrapMode: Text.WrapAtWordBoundaryOrAnywhere
           }
         }
+
+        // Say so rather than let the red line look like a button that does nothing.
+        Text {
+          width: parent.width
+          visible: card.gated
+          text: "回答得在 pi 里跑 mission.resolve-decision —— 岛里目前只能看。"
+          color: panel.theme.muted
+          font.family: theme.textFontFamily
+          font.pixelSize: theme.px(11)
+          wrapMode: Text.WrapAtWordBoundaryOrAnywhere
+        }
       }
     }
   }
@@ -144,7 +159,9 @@ Column {
     width: panel.width
     visible: !panel.board.loading && panel.board.error === ""
       && panel.board.missions.length === 0
-    text: panel.board.missing
+    text: panel.board.hidden > 0
+      ? panel.board.hidden + " 条已收口的按设置没列出（设置 → Addons → Mission → 已收口的）。"
+      : panel.board.missing
       ? "还没有 mission。在 pi 里用 workflow 委派时带 `mission: {title: …}`，记录就会落到 "
         + panel.board.dir + "。"
       : "这里列的是 pi-subagents 的 durable 记录，现在都是空的。"

@@ -59,17 +59,40 @@ Addon {
   readonly property var empty: ({ store: "", generatedAt: 0, missions: [], stale: 0,
     skipped: 0, missing: false })
   property var doc: empty
-  readonly property var missions: doc.missions || []
+  // The watcher's list before this addon's own filter. `--done-days` cannot
+  // express "hide the finished ones": 0 means "no window" over in missions.py,
+  // so the settings option "不显示" is applied here instead.
+  readonly property var raw: doc.missions || []
+  readonly property var missions: {
+    var list = missionBoard.doneDays === 0
+      ? raw.filter(function (m) { return m.terminal !== true }) : raw.slice()
+    // The index is newest-first, which buries the one mission you owe an answer
+    // to under the finished experiments you cannot even read. Owe-you comes first.
+    return list.sort(function (a, b) {
+      var w = (missionBoard.isWaiting(b) ? 1 : 0) - (missionBoard.isWaiting(a) ? 1 : 0)
+      if (w !== 0) return w
+      var t = (a.terminal === true ? 1 : 0) - (b.terminal === true ? 1 : 0)
+      if (t !== 0) return t
+      return String(b.updatedAt || "").localeCompare(String(a.updatedAt || ""))
+    })
+  }
+  // Finished ones this option keeps off the list (the time window's own
+  // dropouts are the script's `skipped`).
+  readonly property int hidden: raw.length - missions.length
   readonly property bool missing: doc.missing === true
   // Missions the index still lists but whose record is gone (terminal retention).
   readonly property int stale: Number(doc.stale) || 0
   readonly property int skipped: Number(doc.skipped) || 0
 
   readonly property int running: countWhere(function (m) { return m.status === "active" })
-  readonly property int waiting: countWhere(function (m) {
+  // An open decision gates the mission even while pi-subagents keeps its
+  // lifecycle status (only active/completed ones flip to needs_decision), so the
+  // tile and the card both judge by the decision, not by the status label.
+  function isWaiting(m) {
     return m.status === "needs_decision" || m.status === "needs-attention"
       || m.status === "budget-exhausted" || (m.openDecisions || []).length > 0
-  })
+  }
+  readonly property int waiting: countWhere(isWaiting)
   readonly property int open: countWhere(function (m) { return m.terminal !== true })
   readonly property int tokens: {
     var sum = 0
